@@ -9,6 +9,7 @@ const config = {
 }
 
 const uri = process.env.MONGODB_URI; // Heroku MongoDB add-on
+// const uri = "mongodb://heroku_zss53kwl:p4609camu0id25146heclidj5d@ds157723.mlab.com:57723/heroku_zss53kwl";
 
 const addToCollection = async(collectionName, data) => {
     MongoClient.connect(uri, { useNewUrlParser: true }, async(err, client) => {

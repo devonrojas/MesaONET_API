@@ -1,5 +1,5 @@
 const PORT = process.env.PORT || 7000;
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY // || "AIzaSyCehU42t2h709gUgFvVdcXF6jFfptxKTbs";
 const GOOGLE_MAPS_URI = "https://maps.googleapis.com/maps/api/geocode/json?address=";
 
 const express = require('express');
@@ -229,13 +229,40 @@ app.get('/generate', async(req, res) => {
 
     let results = await db.queryMultiple("job_tracking", dbQueries);
 
+    let url = GOOGLE_MAPS_URI + "92111" + "&key=" + GOOGLE_MAPS_API_KEY;
+    let options = {
+        json: true
+    }
+
+    let local = (await rp(url, options)).results[0].address_components;
+    
+    location = local
+    .filter(c => 
+        (c.types.includes("postal_code") || 
+         c.types.includes("administrative_area_level_2") || 
+         c.types.includes("administrative_area_level_1"))
+    )
+    .map(c => {
+        let a = c.types[0];
+        a = (a == "postal_code") ? "zip" : 
+            (a == "administrative_area_level_2") ? "county" : 
+            (a = "adminstrative_area_level_1") ? "state" : null;
+
+        let obj = {};
+        obj[a] = c.short_name;
+        return obj;
+    })
+    .reduce((res, cur) => {
+        return Object.assign(res, cur);
+    }, {});
+
     await asyncForEach(data, async(career, idx) => {
 
         calls.push(async(cb) => {
             try {
                 process.stdout.write("[" + (idx + 1) + "/" + (data.length) + "] ");
                 process.stdout.write("Pulling data for career " + career + "\n");
-                let c = await JobTracker.pullData(null, career, "92111");
+                let c = await JobTracker.pullData(null, career, location);
                 if(c) {
                     if(c.retry) {
                         cb(c.career.careercode);
@@ -273,7 +300,7 @@ app.get('/generate', async(req, res) => {
                 try {
                     process.stdout.write("[" + (idx + 1) + "/" + (errored.length) + "] ");
                     process.stdout.write("Pulling data for career " + career + "\n");
-                    let c = await JobTracker.pullData(null, career, "92111");
+                    let c = await JobTracker.pullData(null, career, location);
                     if(c) {
                         cb(c.career);
                     }

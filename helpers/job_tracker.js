@@ -12,12 +12,9 @@ async function pullData(career, code, location = {zip: "92111", county: "San Die
         areas = career.jobcount.map(el => el.area);
         console.log("Career data exists. Pulling new data...");
     }
-    console.log(areas);
-    console.log(Object.keys(location).filter(k => k != "zip").map(k => location[k]));
-    console.log(areas.concat(Object.keys(location).filter(k => k != "zip").map(k => location[k])));
+
     // Combine existing areas with any new queried areas
     areas = [...new Set(areas.concat(Object.keys(location).filter(k => k != "zip").map(k => location[k])))];
-    console.log(areas);
 
     let result = {};
     let retry = false;
