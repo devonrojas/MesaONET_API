@@ -198,7 +198,7 @@ app.get('/generate', async(req, res) => {
 
     let careers = ACADEMIC_PROGRAM_DATA.map(program => program.careers.map(career => career.code));
     let merged = [].concat.apply([], careers).sort();
-    let data = [...new Set(merged)].slice(0, 10); // Remove all duplicate career codes
+    let data = [...new Set(merged)]; // Remove all duplicate career codes
 
     let manual = [
         '11-9199.11',
