@@ -51,7 +51,7 @@ const addToCollection = async(collectionName, data) => {
             clearInterval(interval);
             process.stdout.write("\nWrite operation successful.\n")
     
-            db.close();
+            DB.close();
             console.log("Database connection closed.");
         }
     })   
@@ -99,7 +99,7 @@ const addMultipleToCollection = async(collectionName, data) => {
                 console.error(error);
             } finally {
                 await timeout(2000);
-                db.close();
+                DB.close();
             }
         }
     })
@@ -121,7 +121,7 @@ const queryCollection = async(collectionName, query) => {
                 // console.log("Searching documents for: " + JSON.stringify(queryObj));
                 let res = collection.find(query).toArray();
     
-                db.close();
+                DB.close();
                 resolve(res);
             }
         })
@@ -159,7 +159,7 @@ const queryMultiple = async(collectionName, queryArr) => {
                     })
                 });
                 let res = await throttle(calls, 50, 1000);
-                db.close();
+                DB.close();
                 console.log("Connection closed.");
                 resolve(res);
             }
