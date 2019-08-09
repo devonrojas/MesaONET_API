@@ -20,9 +20,10 @@ const CareerOneStop = require("./services/CareerOneStopService.js");
 
 const ACADEMIC_PROGRAM_DATA = require('./academic_programs.json');
 
-const whitelist = ["https://peaceful-taiga-34406.herokuapp.com"]
+const whitelist = ["https://peaceful-taiga-34406.herokuapp.com", "https://infinite-spire-51367.herokuapp.com"]
 const corsOptions = {
     origin: (origin, cb) => {
+        console.log(origin);
         if(whitelist.indexOf(origin) !== -1) {
             cb(null, true);
         } else {
