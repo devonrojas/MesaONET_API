@@ -3,6 +3,7 @@ const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 const GOOGLE_MAPS_URI = "https://maps.googleapis.com/maps/api/geocode/json?address=";
 
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
 const rp = require("request-promise");
@@ -18,6 +19,17 @@ const JobTracker = require('./helpers/job_tracker');
 const CareerOneStop = require("./services/CareerOneStopService.js");
 
 const ACADEMIC_PROGRAM_DATA = require('./academic_programs.json');
+
+const whitelist = ["https://peaceful-taiga-34406.herokuapp.com"]
+const corsOptions = {
+    origin: (origin, cb) => {
+        if(whitelist.indexOf(origin) !== -1) {
+            cb(null, true);
+        } else {
+            cb(new Error("Not allowed by CORS"));
+        }
+    }
+}
 
 const logger = (req, res, next) => {
     let m;
@@ -37,6 +49,7 @@ const logger = (req, res, next) => {
     next();
 }
 
+app.use(cors(corsOptions));
 app.use(logger);
 
 app.get('/', (req, res) => {
