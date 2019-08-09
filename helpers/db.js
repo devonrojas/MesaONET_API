@@ -12,106 +12,118 @@ const uri = `mongodb+srv://devonrojas:${config.password}@careeredmesa-zxzm3.gcp.
 
 const addToCollection = async(collectionName, data) => {
     MongoClient.connect(uri, { useNewUrlParser: true }, async(err, db) => {
-        let DB = db.db("SDCCD");
-        console.log("Successfully connected to database.")
-
-        let collection = DB.collection(collectionName);
-        console.log("Collection <" + collectionName + ">" + " opened.");
-
-        let start = Date.now();
-
-        let res = await collection.replaceOne(
-            { careercode: data['careercode'] }, 
-            { 
-                jobcount: data['jobcount'],
-                lastUpdated: data['lastUpdated'],
-                careercode: data['careercode']
-            }, 
-            { upsert: true });
-
-        let end = Date.now();
-        let duration = end - start;
-
-        if(res.modifiedCount == 0) {
-            console.log("No document exists for " + data['careercode'] + ".")
-            console.log("Creating document...");
+        if(err) {
+            console.error(err);
+        } else {
+            let DB = db.db("SDCCD");
+            console.log("Successfully connected to database.")
+    
+            let collection = DB.collection(collectionName);
+            console.log("Collection <" + collectionName + ">" + " opened.");
+    
+            let start = Date.now();
+    
+            let res = await collection.replaceOne(
+                { careercode: data['careercode'] }, 
+                { 
+                    jobcount: data['jobcount'],
+                    lastUpdated: data['lastUpdated'],
+                    careercode: data['careercode']
+                }, 
+                { upsert: true });
+    
+            let end = Date.now();
+            let duration = end - start;
+    
+            if(res.modifiedCount == 0) {
+                console.log("No document exists for " + data['careercode'] + ".")
+                console.log("Creating document...");
+            }
+    
+            let waitint = 100;
+            process.stdout.write("Writing document to collection")
+            let interval = setInterval(function() {
+                process.stdout.write(".")
+            }, waitint);
+    
+            await timeout(duration * waitint / 10);
+    
+            clearInterval(interval);
+            process.stdout.write("\nWrite operation successful.\n")
+    
+            db.close();
+            console.log("Database connection closed.");
         }
-
-        let waitint = 100;
-        process.stdout.write("Writing document to collection")
-        let interval = setInterval(function() {
-            process.stdout.write(".")
-        }, waitint);
-
-        await timeout(duration * waitint / 10);
-
-        clearInterval(interval);
-        process.stdout.write("\nWrite operation successful.\n")
-
-        db.close();
-        console.log("Database connection closed.");
     })   
 }
 
 const addMultipleToCollection = async(collectionName, data) => {
     MongoClient.connect(uri, { useNewUrlParser: true }, async(err, db) => {
-        let DB = db.db("SDCCD");
-        console.log("\nSuccessfully connected to database.");
-
-        let collection = DB.collection(collectionName);
-        console.log("Collection <" + collectionName + ">" + " opened.");
-
-        let atomic = data.map(item => {
-            return {
-                replaceOne: {
-                    "filter": { careercode: item['careercode'] },
-                    "replacement": { 
-                        jobcount: item['jobcount'],
-                        lastUpdated: item['lastUpdated'],
-                        careercode: item['careercode']
-                    },
-                    "upsert": true
+        if(err) {
+            console.error(err)
+        } else {
+            let DB = db.db("SDCCD");
+            console.log("\nSuccessfully connected to database.");
+    
+            let collection = DB.collection(collectionName);
+            console.log("Collection <" + collectionName + ">" + " opened.");
+    
+            let atomic = data.map(item => {
+                return {
+                    replaceOne: {
+                        "filter": { careercode: item['careercode'] },
+                        "replacement": { 
+                            jobcount: item['jobcount'],
+                            lastUpdated: item['lastUpdated'],
+                            careercode: item['careercode']
+                        },
+                        "upsert": true
+                    }
                 }
+            });
+    
+            process.stdout.write("Total documents to add: " + atomic.length);
+            process.stdout.write("\nWriting documents to database.");
+    
+            let interval = setInterval(() => {
+                process.stdout.write(".");
+            }, 200)
+    
+            try {
+                let res = await collection.bulkWrite(atomic, { ordered: false });
+                clearInterval(interval);
+                process.stdout.write("\nDone.\n")
+            } catch(error) {
+                clearInterval(interval);
+                process.stdout.write("\n")
+                console.error(error);
+            } finally {
+                await timeout(2000);
+                db.close();
             }
-        });
-
-        process.stdout.write("Total documents to add: " + atomic.length);
-        process.stdout.write("\nWriting documents to database.");
-
-        let interval = setInterval(() => {
-            process.stdout.write(".");
-        }, 200)
-
-        try {
-            let res = await collection.bulkWrite(atomic, { ordered: false });
-            clearInterval(interval);
-            process.stdout.write("\nDone.\n")
-        } catch(error) {
-            clearInterval(interval);
-            process.stdout.write("\n")
-            console.error(error);
-        } finally {
-            await timeout(2000);
-            db.close();
         }
-
     })
 }
 
 const queryCollection = async(collectionName, query) => {
     return new Promise((resolve, reject) => {
         MongoClient.connect(uri, { useNewUrlParser: true }, async(err, db) => {
-            let DB = db.db("SDCCD");
-            // console.log("\nSuccessfully connected to database.");
+            if(err) {
+                console.log(err);
+                reject(err);
+            } else {
+                let DB = db.db("SDCCD");
+                // console.log("\nSuccessfully connected to database.");
+        
+                let collection = DB.collection(collectionName);
+                // console.log("Collection <" + collectionName + "> opened");
+        
+                // console.log("Searching documents for: " + JSON.stringify(queryObj));
+                let res = collection.find(query).toArray();
     
-            let collection = DB.collection(collectionName);
-            // console.log("Collection <" + collectionName + "> opened");
-    
-            // console.log("Searching documents for: " + JSON.stringify(queryObj));
-            let res = collection.find(query).toArray();
-
-            db.close();
-            resolve(res);
+                db.close();
+                resolve(res);
+            }
         })
     })
 }
@@ -121,31 +133,36 @@ const queryMultiple = async(collectionName, queryArr) => {
 
     return new Promise((resolve, reject) => {
         MongoClient.connect(uri, { useNewUrlParser: true }, async(err, db) => {
-            let DB = db.db("SDCCD");
-            console.log("\nSuccessfully connected to database.");
-    
-            let collection = DB.collection(collectionName);
-            console.log("Collection <" + collectionName + "> opened");
-    
-            queryArr.forEach(query => {
-                calls.push(async(cb) => {
-                    console.log("Querying " + JSON.stringify(query));
-                    let res = await collection.find(query).toArray();
-                    if(res) {
-                        cb(res[0]);
-                    } else {
-                        let r = {
-                            careercode: query.careercode,
-                            career: null
+            if(err) {
+                console.error(err);
+                reject(err);
+            } else {
+                let DB = db.db("SDCCD");
+                console.log("\nSuccessfully connected to database.");
+        
+                let collection = DB.collection(collectionName);
+                console.log("Collection <" + collectionName + "> opened");
+        
+                queryArr.forEach(query => {
+                    calls.push(async(cb) => {
+                        console.log("Querying " + JSON.stringify(query));
+                        let res = await collection.find(query).toArray();
+                        if(res) {
+                            cb(res[0]);
+                        } else {
+                            let r = {
+                                careercode: query.careercode,
+                                career: null
+                            }
+                            cb(query.careercode);
                         }
-                        cb(query.careercode);
-                    }
-                })
-            });
-            let res = await throttle(calls, 50, 1000);
-            db.close();
-            console.log("Connection closed.");
-            resolve(res);
+                    })
+                });
+                let res = await throttle(calls, 50, 1000);
+                db.close();
+                console.log("Connection closed.");
+                resolve(res);
+            }
         })
     })
 }
