@@ -15,6 +15,7 @@ async function pullData(career, code, location = {zip: "92111", county: "San Die
 
     // Combine existing areas with any new queried areas
     areas = [...new Set(areas.concat(Object.keys(location).filter(k => k != "zip").map(k => location[k])))];
+    console.log(areas);
 
     let result = {};
     let retry = false;
