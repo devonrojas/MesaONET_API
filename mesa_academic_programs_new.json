@@ -1,0 +1,196 @@
+[
+  {
+    "title": "Accounting",
+    "degree_types": [
+      "AS Degree",
+      "Certificate of Achievement",
+      "Certificate of Performance"
+    ]
+  },
+  {
+    "title": "American Sign Language",
+    "degree_types": ["AA Degree", "Certificate of Achievement"]
+  },
+  { "title": "Animal Health Technology", "degree_types": ["AS Degree"] },
+  { "title": "Anthropology", "degree_types": ["AA Degree", "ADT"] },
+  {
+    "title": "Architecture",
+    "degree_types": [
+      "AS Degree",
+      "Certificate of Achievement",
+      "Certificate of Performance"
+    ]
+  },
+  {
+    "title": "Art Fine Art",
+    "degree_types": ["AA Degree", "ADT", "Certificate of Performance"]
+  },
+  {
+    "title": "Biology",
+    "degree_types": ["AS Degree", "Certificate of Performance"]
+  },
+  { "title": "Black Studies", "degree_types": ["AA Degree"] },
+  {
+    "title": "Building Construction Technology",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  {
+    "title": "Business Administration",
+    "degree_types": ["AS Degree", "ADT", "Certificate of Achievement"]
+  },
+  {
+    "title": "Business Management",
+    "degree_types": [
+      "AS Degree",
+      "Certificate of Achievement",
+      "Certificate of Performance"
+    ]
+  },
+  {
+    "title": "Chemistry",
+    "degree_types": [
+      "AS Degree",
+      "Certificate of Achievement",
+      "Certificate of Performance"
+    ]
+  },
+  { "title": "Chicana and Chicano Studies", "degree_types": ["AA Degree"] },
+  {
+    "title": "Child Development",
+    "degree_types": [
+      "AS Degree",
+      "Certificate of Achievement",
+      "Certificate of Performance"
+    ]
+  },
+  {
+    "title": "Communication Studies",
+    "degree_types": ["AA Degree", "ADT", "Certificate of Performance"]
+  },
+  {
+    "title": "Computer Business Technology",
+    "degree_types": [
+      "AS Degree",
+      "Certificate of Achievement",
+      "Certificate of Performance"
+    ]
+  },
+  {
+    "title": "Computer and Information Sciences",
+    "degree_types": [
+      "AS Degree",
+      "Certificate of Achievement",
+      "Certificate of Performance"
+    ]
+  },
+  {
+    "title": "Culinary Arts/Culinary Management in Hospitality",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  { "title": "Dance", "degree_types": ["Certificate of Performance"] },
+  {
+    "title": "Dental Assisting",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  { "title": "Dramatic Arts", "degree_types": ["AA Degree"] },
+  { "title": "Education", "degree_types": ["ADT"] },
+  {
+    "title": "Engineering",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  {
+    "title": "English",
+    "degree_types": ["AA Degree", "Certificate of Performance"]
+  },
+  {
+    "title": "Exercise Science",
+    "degree_types": ["AA Degree", "ADT", "Certificate of Performance"]
+  },
+  {
+    "title": "Fashion",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  {
+    "title": "Geographic Information Systems",
+    "degree_types": ["AS Degree", "Certificate of Performance"]
+  },
+  { "title": "Geography", "degree_types": ["AA Degree", "ADT"] },
+  { "title": "Geology", "degree_types": ["AA Degree", "ADT"] },
+  { "title": "Health Information Technology", "degree_types": ["AS Degree"] },
+  { "title": "History", "degree_types": ["AA Degree", "ADT"] },
+  {
+    "title": "Hospitality",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  { "title": "Humanities", "degree_types": ["AS Degree"] },
+  {
+    "title": "Interior Design",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  { "title": "Japanese", "degree_types": ["AA Degree"] },
+  {
+    "title": "Journalism",
+    "degree_types": ["AA Degree", "ADT", "Certificate of Achievement"]
+  },
+  { "title": "Liberal Arts", "degree_types": ["Certificate of Performance"] },
+  {
+    "title": "Liberal Arts and Sciences",
+    "degree_types": ["AA Degree", "Certificate of Achievement"]
+  },
+  { "title": "Liberal Studies", "degree_types": ["AA Degree"] },
+  {
+    "title": "Marketing",
+    "degree_types": ["AA Degree", "Certificate of Achievement"]
+  },
+  { "title": "Mathematics", "degree_types": ["AA Degree", "ADT"] },
+  {
+    "title": "Medical Assisting",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  {
+    "title": "Multimedia",
+    "degree_types": [
+      "AS Degree",
+      "Certificate of Achievement",
+      "Certificate of Performance"
+    ]
+  },
+  {
+    "title": "Music",
+    "degree_types": ["AA Degree", "Certificate of Performance"]
+  },
+  {
+    "title": "Nutrition",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  { "title": "Philosophy", "degree_types": ["AA Degree"] },
+  { "title": "Phlebotomy", "degree_types": ["Certificate of Performance"] },
+  {
+    "title": "Physical Sciences",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  { "title": "Physical Therapist Assistant", "degree_types": ["AS Degree"] },
+  {
+    "title": "Physics",
+    "degree_types": ["AS Degree", "ADT", "Certificate of Achievement"]
+  },
+  { "title": "Political Science", "degree_types": ["AA Degree", "ADT"] },
+  {
+    "title": "Psychology",
+    "degree_types": ["AA Degree", "ADT", "Certificate of Achievement"]
+  },
+  {
+    "title": "Radiologic Technology",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  { "title": "Real Estate", "degree_types": ["AS Degree"] },
+  { "title": "Social Sciences", "degree_types": [] },
+  { "title": "Sociology", "degree_types": ["AA Degree", "ADT"] },
+  { "title": "Spanish", "degree_types": ["AA Degree"] },
+  { "title": "Sustainability", "degree_types": ["AA Degree"] },
+  {
+    "title": "Web Development",
+    "degree_types": ["AS Degree", "Certificate of Achievement"]
+  },
+  { "title": "Women's Studies", "degree_types": ["Certificate of Performance"] }
+]
