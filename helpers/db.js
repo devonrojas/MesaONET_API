@@ -8,14 +8,14 @@ const config = {
     password: "DarkBlue1!"
 }
 
-const uri = `mongodb+srv://devonrojas:${config.password}@careeredmesa-zxzm3.gcp.mongodb.net/test?retryWrites=true&w=majority`;
+const uri = process.env.MONGODB_URI; // Heroku MongoDB add-on
 
 const addToCollection = async(collectionName, data) => {
-    MongoClient.connect(uri, { useNewUrlParser: true }, async(err, db) => {
+    MongoClient.connect(uri, { useNewUrlParser: true }, async(err, client) => {
         if(err) {
             console.error(err);
         } else {
-            let DB = db.db("SDCCD");
+            let DB = client.db("heroku_zss53kwl");
             console.log("Successfully connected to database.")
     
             let collection = DB.collection(collectionName);
@@ -58,11 +58,11 @@ const addToCollection = async(collectionName, data) => {
 }
 
 const addMultipleToCollection = async(collectionName, data) => {
-    MongoClient.connect(uri, { useNewUrlParser: true }, async(err, db) => {
+    MongoClient.connect(uri, { useNewUrlParser: true }, async(err, client) => {
         if(err) {
             console.error(err)
         } else {
-            let DB = db.db("SDCCD");
+            let DB = client.db("heroku_zss53kwl");
             console.log("\nSuccessfully connected to database.");
     
             let collection = DB.collection(collectionName);
@@ -107,12 +107,12 @@ const addMultipleToCollection = async(collectionName, data) => {
 
 const queryCollection = async(collectionName, query) => {
     return new Promise((resolve, reject) => {
-        MongoClient.connect(uri, { useNewUrlParser: true }, async(err, db) => {
+        MongoClient.connect(uri, { useNewUrlParser: true }, async(err, client) => {
             if(err) {
                 console.log(err);
                 reject(err);
             } else {
-                let DB = db.db("SDCCD");
+                let DB = client.db("heroku_zss53kwl");
                 // console.log("\nSuccessfully connected to database.");
         
                 let collection = DB.collection(collectionName);
@@ -132,12 +132,12 @@ const queryMultiple = async(collectionName, queryArr) => {
     let calls = [];
 
     return new Promise((resolve, reject) => {
-        MongoClient.connect(uri, { useNewUrlParser: true }, async(err, db) => {
+        MongoClient.connect(uri, { useNewUrlParser: true }, async(err, client) => {
             if(err) {
                 console.error(err);
                 reject(err);
             } else {
-                let DB = db.db("SDCCD");
+                let DB = client.db("heroku_zss53kwl");
                 console.log("\nSuccessfully connected to database.");
         
                 let collection = DB.collection(collectionName);
