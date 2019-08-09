@@ -50,7 +50,7 @@ const logger = (req, res, next) => {
     next();
 }
 
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(logger);
 
 app.get('/', (req, res) => {
