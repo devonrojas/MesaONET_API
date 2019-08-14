@@ -58,6 +58,7 @@ const getCareerTechnicalSkills = async(code) => {
     console.log("Pulling career technical skills from O*NET Web Services...");
     const careerTechnicalSkillsUrl = "https://services.onetcenter.org/ws/mnm/careers/" + code + "/technology";
     try {
+        console.log("here");
         let data = await rp(careerTechnicalSkillsUrl, ONET_OPTIONS);
         if(data.hasOwnProperty("category")) {
             let technical_skills = data.category;
