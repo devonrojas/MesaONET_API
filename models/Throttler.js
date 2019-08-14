@@ -4,12 +4,9 @@ const GROWTH_DATA = require("../bls_projected_occupational_growth_2016-2026.json
 const Career = require("./Career.js");
 const Salary = require("./Salary.js");
 
-function timeout(ms) {
+const timeout = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-
-var code = 0;
-var requests = 0;
 
 const asyncForEach = async(arr, cb) => {
     for(let i = 0; i < arr.length; i++) {
@@ -17,6 +14,15 @@ const asyncForEach = async(arr, cb) => {
     }
 }
 
+var code = 0;
+var requests = 0;
+
+/**
+ * 
+ * @param {Array}  calls            Callbacks to throttle
+ * @param {number} rateLimitCount   Amount of allowed synchronous call executions
+ * @param {number} rateLimitTime    Delay between execution groups
+ */
 const throttle = async(calls, rateLimitCount, rateLimitTime) => {
     const totalCalls = calls.length;
     console.log(`Total calls: ${totalCalls}`);
@@ -35,23 +41,43 @@ const throttle = async(calls, rateLimitCount, rateLimitTime) => {
     return p;
 }
 
+/**
+ * @class
+ */
 class Throttler {
+    /**
+     * Initializes class members.
+     * 
+     * @param {Array}       arr             Iterable list of items
+     * @param {number=1}    rateLimitCount  Amount of allowed sychronous calls
+     * @param {number=1000} rateLimitTime   Delay between call groups
+     */
     constructor(arr = [], rateLimitCount = 1, rateLimitTime = 1000) {
         this.arr = arr;
         this.rateLimitCount = rateLimitCount;
         this.rateLimitTime = rateLimitTime;
     }
 
+    /**
+     * Runs O*NET data collection logic.
+     * 
+     * @async
+     * 
+     * @return {Array} Collection of responses from callback functions
+     */
     async execute() {
         let calls = [];
         let startTime = Date.now();
         
         await asyncForEach(this.arr, async(program) => {
             console.log("Program: " + program.title);
+
             // Get all matching occupations for program name
             const keyword_url = "https://services.onetcenter.org/ws/online/search?keyword=" + program.title.toLowerCase();
             let res = await ONETService.fetch(keyword_url);
+
             requests+=2;
+
             let occupation_calls = [];
     
             await asyncForEach(res, async(occupation) => {
@@ -137,9 +163,11 @@ class Throttler {
         })
     
         let p = await throttle(calls, this.rateLimitCount, this.rateLimitTime);
+
         console.log("\n========================================")
         console.log(`\nTotal requests made: ${requests}\n`);
         console.log(`Elapsed time: ` + ((Date.now() - startTime) / 1000) + " seconds");
+        
         return p;
     }
 }

@@ -1,45 +1,27 @@
 const PORT = process.env.PORT || 7000;
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY // || "AIzaSyCehU42t2h709gUgFvVdcXF6jFfptxKTbs";
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || "AIzaSyCehU42t2h709gUgFvVdcXF6jFfptxKTbs";
 const GOOGLE_MAPS_URI = "https://maps.googleapis.com/maps/api/geocode/json?address=";
 
-const express = require('express');
-const cors = require('cors');
-const app = express();
+// Package imports
+const express       = require('express');
+const cors          = require('cors');
+const app           = express();
+const rp            = require("request-promise");
+const fs            = require('fs');
 
-const rp = require("request-promise");
-
-const fs = require('fs');
-const access = fs.createWriteStream(__dirname + "/logs/" + new Date().toLocaleDateString().replace(/\//g, "") +".log", {flags: 'a'});
-
-const db = require("./helpers/db.js");
-const throttle = require("./helpers/throttle.js");
-
-const Program = require('./helpers/main');
-const JobTracker = require('./helpers/job_tracker');
+// Module imports
+const db            = require("./helpers/db.js");
+const throttle      = require("./helpers/throttle.js");
+const Program       = require('./helpers/main');
+const JobTracker    = require('./helpers/job_tracker');
 const CareerOneStop = require("./services/CareerOneStopService.js");
 
 const ACADEMIC_PROGRAM_DATA = require('./academic_programs.json');
-
-const whitelist = ["https://peaceful-taiga-34406.herokuapp.com", "https://infinite-spire-51367.herokuapp.com"]
-const corsOptions = {
-    origin: (origin, cb) => {
-        console.log(origin);
-        if(whitelist.indexOf(origin) !== -1) {
-            cb(null, true);
-        } else {
-            cb(new Error("Not allowed by CORS"));
-        }
-    }
-}
+const access = fs.createWriteStream(__dirname + "/logs/" + new Date().toLocaleDateString().replace(/\//g, "") +".log", {flags: 'a'});
 
 const logger = (req, res, next) => {
     let m;
 
-    // if(err) {
-    //     m = "Server encountered an error: " + err.stack;
-    //     res.status(500).send({error: "Server failure."});
-    // } else {
-    // }
     m = "[" + new Date().toLocaleString() + "]" + " Request received on: " + req.path;
 
     console.log("\n" + "*".repeat(m.length))
@@ -53,6 +35,10 @@ const logger = (req, res, next) => {
 app.use(cors());
 app.use(logger);
 
+/**
+ * Method: GET
+ * Lists all routes available on API.
+ */
 app.get('/', (req, res) => {
     let routes = app._router.stack
     .filter(layer => {
@@ -63,6 +49,12 @@ app.get('/', (req, res) => {
     res.send('Available routes for this program:<br>' + routes);
 })
 
+/**
+ * Method: GET
+ * Retrieves program information associated with program code.
+ * 
+ * @param {number} code Program code to look up
+ */
 app.get('/program/:code', (req, res) => {
     let code = req.params.code;
     let data = ACADEMIC_PROGRAM_DATA.find(x => x.code == code);
@@ -75,6 +67,15 @@ app.get('/program/:code', (req, res) => {
     }
 })
 
+/**
+ * Method: GET
+ * Retreives occupation information associated with a program
+ * code, location, and radius.
+ * 
+ * @param {string} code     Occupation code to look up
+ * @param {string} location Location to retrieve occupation data around
+ * @param {number} radius   Distance from location to search
+ */
 app.get('/career/:code/:location/:radius', async(req, res) => {
     let code = req.params.code ? req.params.code : res.status(400).send("Please provide an ONET Code.");
     let location = req.params.location ? req.params.location : res.status(400).send("Please provide a location ('US', 'CA', '92111', 'San Diego', etc.");
@@ -193,26 +194,16 @@ app.get('/career/:code/:location/:radius', async(req, res) => {
     else return res.status(400).send("Could not locate career. Please try again.");
 })
 
+/**
+ * Method: GET
+ * Pulls new program and occupation data
+ */
 app.get('/generate', async(req, res) => {
     res.status(200).send("Request received.");
 
     let careers = ACADEMIC_PROGRAM_DATA.map(program => program.careers.map(career => career.code));
     let merged = [].concat.apply([], careers).sort();
     let data = [...new Set(merged)]; // Remove all duplicate career codes
-
-    let manual = [
-        '11-9199.11',
-        '15-2091.00',
-        '17-2199.01',
-        '17-2199.09',
-        '17-3027.01',
-        '17-3029.11',
-        '17-3029.12',
-        '19-2041.03',
-        '29-1199.04',
-        '43-4021.00',
-        '47-2142.00'
-    ]
 
     let dbCalls = [];
     let calls = [];
@@ -257,7 +248,6 @@ app.get('/generate', async(req, res) => {
     }, {});
 
     await asyncForEach(data, async(career, idx) => {
-
         calls.push(async(cb) => {
             try {
                 process.stdout.write("[" + (idx + 1) + "/" + (data.length) + "] ");
