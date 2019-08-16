@@ -1,10 +1,10 @@
 const rp = require('request-promise');
-const ONET_API_USERNAME = process.env.ONET_API_USERNAME;
-const ONET_API_PASSWORD = process.env.ONET_API_PASSWORD;
-const ONET_API_AUTH = process.env.ONET_API_AUTH;
+const ONET_API_USERNAME = process.env.ONET_API_USERNAME || 'sdmesa';
+const ONET_API_PASSWORD = process.env.ONET_API_PASSWORD || '3746kgh';
+const ONET_API_AUTH = process.env.ONET_API_AUTH || 'Basic c2RtZXNhOjM3NDZrZ2g';
 
 const ONET_API_HEADERS = {
-    Authorization: ONET_API_AUTH,
+    Authorization: 'Basic c2RtZXNhOjM3NDZrZ2g',
     Accept: 'application/json'
 }
 
@@ -25,7 +25,7 @@ const fetch = async(url) => {
             result = await rp(ONET_OPTIONS);
 
             result = result.hasOwnProperty('occupation') 
-            ? result.occupation.filter(res => res.relevance_score > 35)
+            ? result.occupation.filter(res => res.relevance_score > 50)
                     .map(res => {return {code: res.code, title: res.title}}) 
             : null;
         }

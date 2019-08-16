@@ -14,7 +14,6 @@ const asyncForEach = async(arr, cb) => {
     }
 }
 
-var code = 0;
 var requests = 0;
 
 /**
@@ -52,10 +51,11 @@ class Throttler {
      * @param {number=1}    rateLimitCount  Amount of allowed sychronous calls
      * @param {number=1000} rateLimitTime   Delay between call groups
      */
-    constructor(arr = [], rateLimitCount = 1, rateLimitTime = 1000) {
+    constructor(arr = [], rateLimitCount = 1, rateLimitTime = 1000, startingCode = 0) {
         this.arr = arr;
         this.rateLimitCount = rateLimitCount;
         this.rateLimitTime = rateLimitTime;
+        this.startingCode = startingCode;
     }
 
     /**
@@ -153,7 +153,7 @@ class Throttler {
                 let obj = {
                     title: program.title,
                     degree_types: program.degree_types,
-                    code: code++,
+                    code: this.startingCode++,
                     careers: o.filter(x => x != null),
                     salary: s,
                     aggregate_growth: aggregate_growth

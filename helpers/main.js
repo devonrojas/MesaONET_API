@@ -5,9 +5,9 @@ const Throttler = require('../models/Throttler.js');
 const ACADEMIC_PROGRAMS = require('../mesa_academic_programs_new.json');
 
 const ONET_CREDENTIALS = {
-    USERNAME: process.env.ONET_API_USERNAME,
-    PASSWORD: process.env.ONET_API_PASSWORD,
-    BASIC: process.env.ONET_API_AUTH
+    USERNAME: process.env.ONET_API_USERNAME || 'sdmesa',
+    PASSWORD: process.env.ONET_API_PASSWORD || '3746kgh',
+    BASIC: process.env.ONET_API_AUTH || 'Basic c2RtZXNhOjM3NDZrZ2g'
 }
 
 const ONET_API_HEADERS = {
@@ -55,10 +55,9 @@ const getCareerTasks = async(code) => {
 }
 
 const getCareerTechnicalSkills = async(code) => {
-    console.log("Pulling career technical skills from O*NET Web Services...");
+    // console.log("Pulling career technical skills from O*NET Web Services...");
     const careerTechnicalSkillsUrl = "https://services.onetcenter.org/ws/mnm/careers/" + code + "/technology";
     try {
-        console.log(careerTechnicalSkillsUrl);
         let data = await rp(careerTechnicalSkillsUrl, ONET_OPTIONS);
         if(data.hasOwnProperty("category")) {
             let technical_skills = data.category;

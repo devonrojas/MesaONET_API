@@ -1,8 +1,8 @@
 const rp = require('request-promise');
 const Occupation = require('../models/Occupation.js');
 
-const CAREER_ONE_STOP_API_TOKEN = process.env.CAREER_ONE_STOP_API_TOKEN;
-const CAREER_ONE_STOP_API_USERID = process.env.CAREER_ONE_STOP_API_USERID;
+const CAREER_ONE_STOP_API_TOKEN = process.env.CAREER_ONE_STOP_API_TOKEN || "4qQ1K6ss1WXAmRynsMnkk23S/RbsFrf8IRQ5533DFTb1jep2U9ySAe3TI6b/3K3ZAIufJCGOgRKUy4v3XUAuDw==";
+const CAREER_ONE_STOP_API_USERID = process.env.CAREER_ONE_STOP_API_USERID || "d7OIgpqbHGjmySa";
 
 const CAREER_ONE_STOP_HEADERS = {
     'Authorization': "Bearer " + CAREER_ONE_STOP_API_TOKEN
@@ -12,13 +12,12 @@ const CAREER_ONE_STOP_BASE_URI = "https://api.careeronestop.org";
 
 const fetch = async(code, title, growth, location, radius, days) => {
     try {
-        let start = Date.now();
         let details = await buildOccupationDetails(code, location);
-        let elapsedTime = Date.now();
-        console.log("CareerOneStopService Details Call Elapsed Time: " + ((elapsedTime - start) / 1000) + "seconds");
         return new Occupation(code, title, growth, details);
     } catch(error) {
-        console.error(error);
+        if(error.error) {
+            console.error(error.error.Error);
+        }
     }
 }
 

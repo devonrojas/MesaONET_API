@@ -249,12 +249,6 @@
         "salary": { "low": 25220, "median": 37060, "high": 67180 }
       },
       {
-        "code": "45-2093.00",
-        "title": "Farmworkers, Farm, Ranch, and Aquacultural Animals",
-        "growth": -3.8,
-        "salary": { "low": 18410, "median": 26560, "high": 41840 }
-      },
-      {
         "code": "39-2011.00",
         "title": "Animal Trainers",
         "growth": 11.2,
@@ -397,12 +391,6 @@
         "title": "Agricultural Sciences Teachers, Postsecondary",
         "growth": 7.5,
         "salary": { "low": 42240, "median": 84640, "high": 149720 }
-      },
-      {
-        "code": "39-1021.00",
-        "title": "First-Line Supervisors of Personal Service Workers",
-        "growth": 14.6,
-        "salary": { "low": 24360, "median": 38400, "high": 63710 }
       },
       {
         "code": "43-1011.00",
@@ -1103,12 +1091,6 @@
         "title": "Weatherization Installers and Technicians",
         "growth": 9.6,
         "salary": { "low": 26440, "median": 38860, "high": 65350 }
-      },
-      {
-        "code": "47-2221.00",
-        "title": "Structural Iron and Steel Workers",
-        "growth": 12.8,
-        "salary": { "low": 32240, "median": 53970, "high": 93760 }
       },
       {
         "code": "17-3011.01",
@@ -5686,12 +5668,6 @@
         "title": "Hosts and Hostesses, Restaurant, Lounge, and Coffee Shop",
         "growth": 6.9,
         "salary": { "low": 17410, "median": 22160, "high": 30590 }
-      },
-      {
-        "code": "39-1021.00",
-        "title": "First-Line Supervisors of Personal Service Workers",
-        "growth": 14.6,
-        "salary": { "low": 24360, "median": 38400, "high": 63710 }
       },
       {
         "code": "39-3031.00",
