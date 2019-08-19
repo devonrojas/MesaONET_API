@@ -96,7 +96,7 @@ const queryCollection = async(collectionName, query) => {
     console.log("Searching documents for: " + JSON.stringify(query));
     let res = await collection.find(query).toArray();
 
-    client.close();
+    await client.close();
     return res;
 }
 

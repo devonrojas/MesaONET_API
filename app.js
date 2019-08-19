@@ -1,3 +1,8 @@
+/**
+ * @module routers/programs
+ * @requires express
+ */
+
 const PORT = process.env.PORT || 7000;
 const GOOGLE_MAPS_API_KEY =
     process.env.GOOGLE_MAPS_API_KEY ||
@@ -8,7 +13,6 @@ const GOOGLE_MAPS_URI =
 // Package imports
 const express = require("express");
 const cors = require("cors");
-const app = express();
 const rp = require("request-promise");
 const fs = require("fs");
 const bodyParser = require("body-parser");
@@ -50,6 +54,13 @@ const logger = (req, res, next) => {
     next();
 };
 
+/**
+ * @type {object}
+ * @const
+ * @namespace careerEdAPI
+ */
+const app = express();
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
@@ -58,6 +69,10 @@ app.use(logger);
 /**
  * Method: GET
  * Lists all routes available on API.
+ * 
+ * @name get/
+ * @function
+ * @memberof module:routers/programs~careerEdAPI
  */
 app.get("/", (req, res) => {
     let routes = app._router.stack
@@ -69,14 +84,28 @@ app.get("/", (req, res) => {
     res.send("Available routes for this program:<br>" + routes);
 });
 
-const isString = val => {
-    return typeof val === "string";
-};
 
-const isArray = val => {
-    return Array.isArray(val);
-};
-
+/**
+ * Method: POST
+ * Adds a new program to database.
+ * 
+ * Checks to make sure program doesn't already exist in database. If it is
+ * indeed new, then the relevant occupations and their data for the program 
+ * are generated. All occupations pulled for this program are checked
+ * against the job_tracking collection in the database to see if any new 
+ * occupations have popped up. Any new occupations have their job
+ * tracking data pulled for zip code 92111. Additionally, their
+ * occupation data is added into the careers collection. If any of the
+ * occupations have invalid/missing data, all instances of the occupation
+ * in the database removed, so as to not cause any client-side errors.
+ * Once all valid _new_ careers have been added to the database, all
+ * occupations associated with the program have the program's title, url
+ * and degree types added to its relevant_programs property.
+ * 
+ * @name post/program
+ * @function
+ * @memberof module:routers/programs~careerEdAPI
+ */
 app.post("/program", async (req, res) => {
     res.setHeader("Allow-Access-Control-Origin", "*");
     const keys = [
@@ -140,12 +169,17 @@ app.post("/program", async (req, res) => {
         res.status(400).send(error.message);
         return;
     }
+
     try {
-        let programExists = await db.queryCollection("academic_programs", {
-            title: data.title
-        });
         // Check if program has already been generated in database
-        if (programExists.length == 0) {
+        let programExists = (await db.queryCollection("academic_programs", {
+            title: data.title
+        })).reduce((acc, cur) => {
+            if(cur) return false;
+            else return true;   
+        }, true);
+
+        if (programExists) {
             // Get all documents in programs collection for next code to generate in series
             let currentProgramLength = (await db.queryCollection(
                 "academic_programs",
@@ -196,58 +230,24 @@ app.post("/program", async (req, res) => {
                 });
 
                 // Update job_tracking collection with new career codes
-                let queries = newCareers.map(item => {
-                    return {
-                        careercode: item
-                    };
-                });
-                existingCareers = await db.queryMultiple(
+                let query = {careercode: {$in: newCareers }};
+                existingCareers = (await db.queryCollection(
                     "job_tracking",
-                    queries
-                );
-                if (existingCareers.length == 0) {
-                    let url =
-                        GOOGLE_MAPS_URI +
-                        "92111" +
-                        "&key=" +
-                        GOOGLE_MAPS_API_KEY;
-                    let options = {
-                        json: true
-                    };
+                    query
+                ));
+                newCareers = newCareers
+                .filter(career => existingCareers
+                    .map(item => item.careercode)
+                    .indexOf(career) === -1);
 
-                    let local = (await rp(url, options)).results[0]
-                        .address_components;
+                // Create record in job_tracking collection if career data doesn't exist already
+                if (newCareers.length > 0) {
 
-                    location = local
-                        .filter(
-                            c =>
-                                c.types.includes("postal_code") ||
-                                c.types.includes(
-                                    "administrative_area_level_2"
-                                ) ||
-                                c.types.includes("administrative_area_level_1")
-                        )
-                        .map(c => {
-                            let a = c.types[0];
-                            a =
-                                a == "postal_code"
-                                    ? "zip"
-                                    : a == "administrative_area_level_2"
-                                    ? "county"
-                                    : (a = "adminstrative_area_level_1")
-                                    ? "state"
-                                    : null;
-
-                            let obj = {};
-                            obj[a] = c.short_name;
-                            return obj;
-                        })
-                        .reduce((res, cur) => {
-                            return Object.assign(res, cur);
-                        }, {});
+                    let location = {zip: '92111', state: 'CA', county: 'San Diego County'};
 
                     let calls = [];
 
+                    // Career data pull
                     await asyncForEach(newCareers, async (career, idx) => {
                         calls.push(async cb => {
                             try {
@@ -285,17 +285,8 @@ app.post("/program", async (req, res) => {
                     let errored = arr.filter(item => typeof item == "string");
                     arr = arr.filter(item => typeof item == "object");
 
+                    // Run any errored careers again
                     if (errored.length > 0) {
-                        dbCalls = errored.map(item => {
-                            return {
-                                careercode: item
-                            };
-                        });
-
-                        results = await db.queryMultiple(
-                            "job_tracking",
-                            dbCalls
-                        );
 
                         let retryCalls = [];
 
@@ -355,6 +346,8 @@ app.post("/program", async (req, res) => {
                             };
                         });
                     };
+
+                    // Add all new careers to job_tracking collection
                     await db.addMultipleToCollection(
                         "job_tracking",
                         arr,
@@ -406,7 +399,7 @@ app.post("/program", async (req, res) => {
                             related_programs: relatedPrograms
                         }
                         CLEANED_DATA[index] = obj;
-                    }) // Clean result
+                    })
 
                     // Schema for MongoDB bulk write operations
                     const atomicOps2 = (CLEANED_DATA) => {
@@ -432,7 +425,8 @@ app.post("/program", async (req, res) => {
                         });
                     };
 
-                    console.log("Adding to careers collection");
+                    console.log("Adding new careers to careers collection");
+                    // Add all validated careers to careers collection
                     await db.addMultipleToCollection(
                         "careers",
                         CLEANED_DATA,
@@ -440,7 +434,16 @@ app.post("/program", async (req, res) => {
                     );
 
                     // Update existing careers with new program data
-                    let careersToUpdate = await db.queryCollection("careers", {"code": {$in: p.careers.map(career => career.code).filter(career => CLEANED_DATA.map(item => item.code).includes(career.code))}});
+                    let careersToUpdate = await db.queryCollection("careers", 
+                    {"code": 
+                        {$in: p.careers
+                            .map(career => career.code)
+                            .filter(career => CLEANED_DATA
+                                .map(item => item.code)
+                                .includes(career.code))
+                        }
+                    });
+
                     if(careersToUpdate.length > 0) {
                         let programData = {
                             title: p.title,
@@ -454,17 +457,17 @@ app.post("/program", async (req, res) => {
                             degree_types: p.degree_types
                         }
                         let searchArr = [].concat.apply([], careersToUpdate.map(career => career.code));
-                        console.log(searchArr);
                         let query = [
                             {"code": {$in: searchArr}},
                             { $push: { "related_programs": programData}},
                             {"upsert": true}
                         ]
                         
-    
+                        // Push new program data onto relevant careers
                         await db.updateMany("careers", query);
                     }
 
+                    // Clean database collections
                     if (invalidCareers.length > 0) {
                         // Remove invalid careers from database collections
                         console.log(
@@ -503,7 +506,11 @@ app.post("/program", async (req, res) => {
 /**
  * Method: GET
  * Retrieves program information associated with program code.
- *
+ * 
+ * @name get/program/:code
+ * @function
+ * @memberof module:routers/programs~careerEdAPI
+ * 
  * @param {number} code Program code to look up
  */
 app.get("/program/:code", (req, res) => {
@@ -522,6 +529,10 @@ app.get("/program/:code", (req, res) => {
  * Method: GET
  * Retreives occupation information associated with a program
  * code, location, and radius.
+ * 
+ * @name get/career/:code/:location/:radius
+ * @function
+ * @memberof module:routers/programs~careerEdAPI
  *
  * @param {string} code     Occupation code to look up
  * @param {string} location Location to retrieve occupation data around
@@ -827,15 +838,13 @@ app.get("/export-programs", async (req, res) => {
     res.sendStatus(200);
 });
 
-app.get("/test", async(req, res) => {
-    let d = await db.queryCollection("academic_programs", {"careers.code": {$in: ["15-1134.00","29-1061.00"]}});
-    d.map(item => item.title);
-    res.status(200).send(d);
-});
-
 /**
  * Method: GET
  * Pulls new program and occupation data
+ * 
+ * @name get/generate
+ * @function
+ * @memberof module:routers/programs~careerEdAPI
  */
 app.get("/generate", async (req, res) => {
     res.status(200).send("Request received.");
@@ -994,9 +1003,20 @@ app.get("/generate", async (req, res) => {
 
 app.listen(PORT, () => console.log(`App running on port: ${PORT}.`));
 
+
+
 // Helper functions
+
 const asyncForEach = async (arr, cb) => {
     for (let i = 0; i < arr.length; i++) {
         await cb(arr[i], i, arr);
     }
+};
+
+const isString = val => {
+    return typeof val === "string";
+};
+
+const isArray = val => {
+    return Array.isArray(val);
 };
