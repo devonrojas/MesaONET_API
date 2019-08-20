@@ -1,31 +1,61 @@
+/**
+ * @module models/Occupation
+ */
+
+ /**
+  * Description
+  */
 class Occupation {
+    /**
+     * Description.
+     * 
+     * @param {string} code 
+     * @param {string} title 
+     * @param {number} growth 
+     * @param {string} details 
+     */
     constructor(code, title, growth, details) {
+        /** @private */
         this.code = code;
+        /** @private */
         this.title = title;
+        /** @private */
         this.growth = growth;
 
         if(details) {
             if(details.hasOwnProperty("OnetDescription")) {
+                /** @private */
                 this.description = details.OnetDescription;
             }
             if(details.hasOwnProperty("Wages")) {
+                /** @private */
                 this.salary = this.buildSalary(details.Wages)
             }
             if(details.hasOwnProperty("EducationTraining")) {
                 if(details.EducationTraining.hasOwnProperty("EducationType")) {
+                    /** @private */
                     this.education = details.EducationTraining.EducationType;
                 }
             }
             if(details.hasOwnProperty("Tasks")) {
+                /** @private */
                 this.tasks = this.buildTasks(details.Tasks)
             }
             if(details.hasOwnProperty("COSVideoURL")) {
+                /** @private */
                 this.video = details.COSVideoURL;
             }
         }
     
     }
 
+    /**
+     * @name buildSalary
+     * 
+     * @private
+     * @inner
+     * @param {Object} wages 
+     */
     buildSalary(wages) {
         let keys = ['NationalWagesList', 'StateWagesList', 'BLSAreaWagesList'];
         let percentiles = ['Pct10', 'Pct25', 'Median', 'Pct75', 'Pct90'];
@@ -48,6 +78,13 @@ class Occupation {
         return salary;
     }
 
+    /**
+     * @name buildTasks
+     * 
+     * @private
+     * @inner
+     * @param {Array} tasks 
+     */
     buildTasks(tasks) {
         let t = tasks.map(task => {
             if(task.hasOwnProperty("TaskDescription")) {

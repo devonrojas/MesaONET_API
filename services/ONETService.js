@@ -1,10 +1,14 @@
+/**
+ * @module services/ONETService
+ * @requires request-promise
+ */
+
 const rp = require('request-promise');
-const ONET_API_USERNAME = process.env.ONET_API_USERNAME || 'sdmesa';
-const ONET_API_PASSWORD = process.env.ONET_API_PASSWORD || '3746kgh';
+
 const ONET_API_AUTH = process.env.ONET_API_AUTH || 'Basic c2RtZXNhOjM3NDZrZ2g';
 
 const ONET_API_HEADERS = {
-    Authorization: 'Basic c2RtZXNhOjM3NDZrZ2g',
+    Authorization: ONET_API_AUTH,
     Accept: 'application/json'
 }
 
@@ -13,6 +17,33 @@ var ONET_OPTIONS = {
     json: true
 }
 
+const getCareerTechnicalSkills = async(code) => {
+    console.log("Pulling career technical skills from O*NET Web Services...");
+    const careerTechnicalSkillsUrl = "https://services.onetcenter.org/ws/mnm/careers/" + code + "/technology";
+    try {
+        let data = await rp(careerTechnicalSkillsUrl, ONET_OPTIONS);
+        if(data.hasOwnProperty("category")) {
+            let technical_skills = data.category;
+            technical_skills = technical_skills
+            .map(skill => skill.example
+                .map(el => el.name));
+            
+            let arr = [].concat.apply([], technical_skills);
+
+            return arr;
+        } else return null;
+    } catch(error) {
+        console.error(error);
+        return null;
+    }
+}
+
+/**
+ * @name fetch
+ * @memberof module:services/ONETService
+ * 
+ * @param {string} url 
+ */
 const fetch = async(url) => {
     try {
         ONET_OPTIONS.uri = url;    
@@ -52,19 +83,6 @@ const fetch = async(url) => {
                 } else return null;
             } else return null;
         }
-        //  else if(result.hasOwnProperty('education') && result.hasOwnProperty('occupation')) {
-        //     if(result.education.hasOwnProperty('level_required')) {
-        //         if(result.education.level_required.hasOwnProperty('category')) {
-        //             result = result.education.level_required.category.map(c => {
-        //                 if(c.hasOwnProperty('score')) {
-        //                     if(c.score.hasOwnProperty('value')) {
-        //                         return new EducationLevel(c.name, c.score.value)
-        //                     } else return null;
-        //                 } else return null;
-        //             })
-        //         } else return null;
-        //     } else return null;
-        // } 
         else {
             return null;
         }
@@ -77,6 +95,4 @@ const fetch = async(url) => {
     }
 }
 
-module.exports = {
-    fetch
-}
+module.exports = { fetch, getCareerTechnicalSkills }

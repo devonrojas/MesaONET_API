@@ -20,8 +20,9 @@ var ONET_OPTIONS = {
     json: true
 }
 
-const start = async() => {
-    await buildProgramData();
+const start = async(code) => {
+    // await buildProgramData();
+    
 }
 
 const buildProgramData = async () => {
@@ -55,7 +56,7 @@ const getCareerTasks = async(code) => {
 }
 
 const getCareerTechnicalSkills = async(code) => {
-    // console.log("Pulling career technical skills from O*NET Web Services...");
+    console.log("Pulling career technical skills from O*NET Web Services...");
     const careerTechnicalSkillsUrl = "https://services.onetcenter.org/ws/mnm/careers/" + code + "/technology";
     try {
         let data = await rp(careerTechnicalSkillsUrl, ONET_OPTIONS);

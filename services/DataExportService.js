@@ -1,11 +1,31 @@
+/**
+ * @module services/DataExportService
+ */
+
 const CareerService = require("../helpers/main");
 const CareerOneStopService = require("./CareerOneStopService");
 
+/**
+ * Description
+ */
 class DataExportService {
+
+    /**
+     * Description
+     * @param {Array} params 
+     */
     constructor(params) {
+        /** @private */
         this.defaultParams = params ? params : ["92111", 25, 30];
     }
 
+    /**
+     * @name buildData
+     * Generates occupation data for each .
+     * 
+     * @param {Array} arr 
+     * @param {Array} data 
+     */
     async buildData(arr, data = []) {
         await asyncForEach(arr, async(item, index) => {
             console.log("[" + (index + 1) + "/" + arr.length + "]" + " Pulling " + item.code + " data...");

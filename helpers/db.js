@@ -63,6 +63,7 @@ const addMultipleToCollection = async(collectionName, data, atomicOps) => {
     console.log("Collection <" + collectionName + ">" + " opened.");
 
     let atomic = atomicOps(data);
+    console.log(atomic.slice(0, 10));
 
     process.stdout.write("Total documents to add: " + atomic.length);
     process.stdout.write("\nWriting documents to database.");

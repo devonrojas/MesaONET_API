@@ -1,3 +1,7 @@
+/**
+ * @module models/Throttler
+ */
+
 const ONETService = require("../services/ONETService.js");
 const GROWTH_DATA = require("../bls_projected_occupational_growth_2016-2026.json");
 
@@ -41,7 +45,7 @@ const throttle = async(calls, rateLimitCount, rateLimitTime) => {
 }
 
 /**
- * @class
+ * Description
  */
 class Throttler {
     /**
@@ -52,9 +56,13 @@ class Throttler {
      * @param {number=1000} rateLimitTime   Delay between call groups
      */
     constructor(arr = [], rateLimitCount = 1, rateLimitTime = 1000, startingCode = 0) {
+        /** @private */
         this.arr = arr;
+        /** @private */
         this.rateLimitCount = rateLimitCount;
+        /** @private */
         this.rateLimitTime = rateLimitTime;
+        /** @private */
         this.startingCode = startingCode;
     }
 

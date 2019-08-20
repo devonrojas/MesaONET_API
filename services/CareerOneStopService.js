@@ -1,3 +1,8 @@
+/**
+ * @module services/CareerOneStopService
+ * @requires request-promise
+ */
+
 const rp = require('request-promise');
 const Occupation = require('../models/Occupation.js');
 
@@ -10,10 +15,16 @@ const CAREER_ONE_STOP_HEADERS = {
 
 const CAREER_ONE_STOP_BASE_URI = "https://api.careeronestop.org";
 
-const fetch = async(code, title, growth, location, radius, days) => {
+/**
+ * @name fetch
+ * @memberof module:services/CareerOneStopService
+ * 
+ * @param {string} code 
+ * @param {string} location 
+ */
+const fetch = async(code, location) => {
     try {
-        let details = await buildOccupationDetails(code, location);
-        return new Occupation(code, title, growth, details);
+        return await buildOccupationDetails(code, location);
     } catch(error) {
         if(error.error) {
             console.error(error.error.Error);
@@ -21,6 +32,14 @@ const fetch = async(code, title, growth, location, radius, days) => {
     }
 }
 
+/**
+ * @name buildOccupationDetails
+ * @inner
+ * @memberof module:services/CareerOneStopService
+ * 
+ * @param {string} code 
+ * @param {string} location 
+ */
 const buildOccupationDetails = async(code, location = "US") => {
     const OCCUPATION_DETAILS_URI = `/v1/occupation/${CAREER_ONE_STOP_API_USERID}/${code}/${location}`;
 
@@ -44,36 +63,14 @@ const buildOccupationDetails = async(code, location = "US") => {
     }
 }
 
-const buildOccupationJobDetail = async(code, location = "US", radius = 25, days = 30, tries = 0) => {
-    const OCCUPATION_JOB_DETAIL_URI = `/v1/jobsearch/${CAREER_ONE_STOP_API_USERID}/${code}/${location}/${radius}/${days}`;
-
-    let options = buildOptions(OCCUPATION_JOB_DETAIL_URI);
-
-    try {
-        const data = await rp(options);
-        return data;
-    } catch(error) {
-        if(error.statusCode == 404) {
-            // console.error(error.error.Message + " for " + location);
-            if(tries == 0) {
-                // process.stdout.write("Retrying with state parameters...");
-                return buildOccupationJobDetail(code, 'CA', radius, days, 1);
-            } else if(tries == 1) {
-                // process.stdout.write("Retrying with national parameters...");
-                return buildOccupationJobDetail(code, 'US', radius, days, 2);
-            } else {
-                return null;
-            }
-        } else {
-            if(error.name == "RequestError") {
-                console.error("Request timed out.");
-            } else {
-                console.error('Unknown error.');
-            }
-        }
-    }
-}
-
+/**
+ * @name buildOptions
+ * @inner
+ * @memberof module:services/CareerOneStopService
+ * 
+ * @param {string} uri 
+ * @param {Object} params 
+ */
 function buildOptions(uri, params) {
     return {
         uri: CAREER_ONE_STOP_BASE_URI + uri,
@@ -84,7 +81,4 @@ function buildOptions(uri, params) {
     }
 }
 
-module.exports = {
-    fetch,
-    buildOccupationJobDetail
-}
+module.exports = { fetch }
