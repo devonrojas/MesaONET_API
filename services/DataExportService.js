@@ -6,6 +6,7 @@
  * @requires {@link CareerOneStopService}
  */
 
+require("dotenv").config();
 const CareerService = require("../helpers/main");
 const CareerOneStopService = require("./CareerOneStopService");
 

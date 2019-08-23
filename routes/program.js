@@ -5,6 +5,7 @@
  * @requires express
  */
 
+require("dotenv").config();
 const express = require('express');
 
 /**
@@ -19,7 +20,7 @@ const db = require("../helpers/db.js");
 const throttle = require("../helpers/throttle.js");
 const JobTracker = require("../helpers/job_tracker.js");
 const DataExportService = require("../services/DataExportService.js");
-const Throttler = require("../models/Throttler.js");
+const AcademicProgram = require("../models/AcademicProgram.js");
 
 const ACADEMIC_PROGRAM_DATA = require("../academic_programs.json");
 
@@ -119,37 +120,9 @@ Router.post("/", async (req, res) => {
 
         if (programExists) {
             // Get all documents in programs collection for next code to generate in series
-            let currentProgramLength = (await db.queryCollection(
-                "academic_programs",
-                {}
-            )).length;
-            const throttler = new Throttler(
-                [data],
-                5,
-                500,
-                currentProgramLength
-            );
 
-            // Retrieve career info for program
-            console.log("Pulling O*NET data...");
-            let p = (await throttler.execute())[0];
-
-            // Add to academic_programs collection in database
-            let writeOperation = (data) => {
-                return [
-                    { code: data["code"] },
-                    {
-                        code: data["code"],
-                        title: data["title"],
-                        degree_types: data["degree_types"],
-                        careers: data["careers"],
-                        salary: data["salary"],
-                        aggregate_growth: data["aggregate_growth"]
-                    },
-                    { upsert: true }
-                ];
-            };
-            await db.addToCollection("academic_programs", p, writeOperation);
+            let p = new AcademicProgram(...data);
+            await p._retrieveAcademicProgramData();
 
             // Return program object as verification if successful
             res.status(201).send(p);

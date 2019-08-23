@@ -9,7 +9,7 @@
 const MongoClient = require("mongodb").MongoClient;
 const throttle = require('./throttle.js');
 
-const uri = process.env.MONGODB_URI || "mongodb://heroku_zss53kwl:p4609camu0id25146heclidj5d@ds157723.mlab.com:57723/heroku_zss53kwl"; // Heroku MongoDB add-on
+const uri = process.env.MONGODB_URI; // Heroku MongoDB add-on
 
 /**
  * @name addToCollection

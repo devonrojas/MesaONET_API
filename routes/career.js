@@ -6,6 +6,7 @@
  * @requires request-promise
  */
 
+require("dotenv").config();
 const express = require('express');
 const rp = require("request-promise");
 
@@ -26,8 +27,7 @@ const CareerOneStop = require("../services/CareerOneStopService.js");
 const ACADEMIC_PROGRAM_DATA = require("../academic_programs.json");
 
 const GOOGLE_MAPS_API_KEY =
-    process.env.GOOGLE_MAPS_API_KEY ||
-    "AIzaSyCehU42t2h709gUgFvVdcXF6jFfptxKTbs";
+    process.env.GOOGLE_MAPS_API_KEY;
 const GOOGLE_MAPS_URI =
     "https://maps.googleapis.com/maps/api/geocode/json?address=";
 

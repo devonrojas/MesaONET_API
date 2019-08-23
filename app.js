@@ -1,8 +1,11 @@
 /**
  * @module careerEdAPI
+ * @author Devon Rojas
+ * 
  * @requires express
  */
 
+require("dotenv").config();
 const PORT = process.env.PORT || 7000;
 
 // Package imports

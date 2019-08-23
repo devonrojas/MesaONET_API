@@ -5,10 +5,11 @@
  * @requires request-promise
  */
 
+require("dotenv").config();
 const rp = require('request-promise');
 
-const CAREER_ONE_STOP_API_TOKEN = process.env.CAREER_ONE_STOP_API_TOKEN || "4qQ1K6ss1WXAmRynsMnkk23S/RbsFrf8IRQ5533DFTb1jep2U9ySAe3TI6b/3K3ZAIufJCGOgRKUy4v3XUAuDw==";
-const CAREER_ONE_STOP_API_USERID = process.env.CAREER_ONE_STOP_API_USERID || "d7OIgpqbHGjmySa";
+const CAREER_ONE_STOP_API_TOKEN = process.env.CAREER_ONE_STOP_API_TOKEN;
+const CAREER_ONE_STOP_API_USERID = process.env.CAREER_ONE_STOP_API_USERID;
 
 const CAREER_ONE_STOP_HEADERS = {
     'Authorization': "Bearer " + CAREER_ONE_STOP_API_TOKEN

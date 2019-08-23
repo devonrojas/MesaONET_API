@@ -5,9 +5,10 @@
  * @requires request-promise
  */
 
+require("dotenv").config();
 const rp = require('request-promise');
 
-const ONET_API_AUTH = process.env.ONET_API_AUTH || 'Basic c2RtZXNhOjM3NDZrZ2g';
+const ONET_API_AUTH = process.env.ONET_API_AUTH;
 
 const ONET_API_HEADERS = {
     Authorization: ONET_API_AUTH,

@@ -1,3 +1,4 @@
+require("dotenv").config()
 const fs = require('fs');
 const rp = require('request-promise');
 
@@ -5,9 +6,9 @@ const Throttler = require('../models/Throttler.js');
 const ACADEMIC_PROGRAMS = require('../mesa_academic_programs_new.json');
 
 const ONET_CREDENTIALS = {
-    USERNAME: process.env.ONET_API_USERNAME || 'sdmesa',
-    PASSWORD: process.env.ONET_API_PASSWORD || '3746kgh',
-    BASIC: process.env.ONET_API_AUTH || 'Basic c2RtZXNhOjM3NDZrZ2g'
+    USERNAME: process.env.ONET_API_USERNAME,
+    PASSWORD: process.env.ONET_API_PASSWORD,
+    BASIC: process.env.ONET_API_AUTH
 }
 
 const ONET_API_HEADERS = {
