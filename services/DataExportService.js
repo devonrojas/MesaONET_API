@@ -1,5 +1,9 @@
 /**
  * @module services/DataExportService
+ * @author Devon Rojas
+ * 
+ * @requires {@link CareerService}
+ * @requires {@link CareerOneStopService}
  */
 
 const CareerService = require("../helpers/main");

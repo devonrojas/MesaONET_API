@@ -1,5 +1,7 @@
 /**
  * @module services/ONETService
+ * @author Devon Rojas
+ * 
  * @requires request-promise
  */
 
@@ -12,13 +14,24 @@ const ONET_API_HEADERS = {
     Accept: 'application/json'
 }
 
-var ONET_OPTIONS = {
+const ONET_OPTIONS = {
     headers: ONET_API_HEADERS,
     json: true
 }
 
+// Search results threshold
+const RELEVANCE_SCORE_CAP = 50;
+
+
+/**
+ * @name getCareerTechnicalSkills
+ * @memberof module:services/ONETService
+ * @function
+ * 
+ * @param {string} code 
+ */
 const getCareerTechnicalSkills = async(code) => {
-    console.log("Pulling career technical skills from O*NET Web Services...");
+    // console.log("Pulling career technical skills from O*NET Web Services...");
     const careerTechnicalSkillsUrl = "https://services.onetcenter.org/ws/mnm/careers/" + code + "/technology";
     try {
         let data = await rp(careerTechnicalSkillsUrl, ONET_OPTIONS);
@@ -33,7 +46,7 @@ const getCareerTechnicalSkills = async(code) => {
             return arr;
         } else return null;
     } catch(error) {
-        console.error(error);
+        console.error(error.message);
         return null;
     }
 }
@@ -41,6 +54,7 @@ const getCareerTechnicalSkills = async(code) => {
 /**
  * @name fetch
  * @memberof module:services/ONETService
+ * @function
  * 
  * @param {string} url 
  */
@@ -56,7 +70,7 @@ const fetch = async(url) => {
             result = await rp(ONET_OPTIONS);
 
             result = result.hasOwnProperty('occupation') 
-            ? result.occupation.filter(res => res.relevance_score > 50)
+            ? result.occupation.filter(res => res.relevance_score > RELEVANCE_SCORE_CAP)
                     .map(res => {return {code: res.code, title: res.title}}) 
             : null;
         }

@@ -1,5 +1,7 @@
 /**
  * @module routes/career
+ * @author Devon Rojas
+ * 
  * @requires express
  * @requires request-promise
  */

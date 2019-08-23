@@ -1,10 +1,11 @@
 /**
  * @module services/CareerOneStopService
+ * @author Devon Rojas
+ * 
  * @requires request-promise
  */
 
 const rp = require('request-promise');
-const Occupation = require('../models/Occupation.js');
 
 const CAREER_ONE_STOP_API_TOKEN = process.env.CAREER_ONE_STOP_API_TOKEN || "4qQ1K6ss1WXAmRynsMnkk23S/RbsFrf8IRQ5533DFTb1jep2U9ySAe3TI6b/3K3ZAIufJCGOgRKUy4v3XUAuDw==";
 const CAREER_ONE_STOP_API_USERID = process.env.CAREER_ONE_STOP_API_USERID || "d7OIgpqbHGjmySa";
@@ -18,6 +19,7 @@ const CAREER_ONE_STOP_BASE_URI = "https://api.careeronestop.org";
 /**
  * @name fetch
  * @memberof module:services/CareerOneStopService
+ * @function
  * 
  * @param {string} code 
  * @param {string} location 
@@ -35,6 +37,7 @@ const fetch = async(code, location) => {
 /**
  * @name buildOccupationDetails
  * @inner
+ * @function
  * @memberof module:services/CareerOneStopService
  * 
  * @param {string} code 
@@ -66,12 +69,13 @@ const buildOccupationDetails = async(code, location = "US") => {
 /**
  * @name buildOptions
  * @inner
+ * @function
  * @memberof module:services/CareerOneStopService
  * 
  * @param {string} uri 
  * @param {Object} params 
  */
-function buildOptions(uri, params) {
+const buildOptions = (uri, params) => {
     return {
         uri: CAREER_ONE_STOP_BASE_URI + uri,
         qs: params,

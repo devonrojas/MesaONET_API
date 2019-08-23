@@ -56,7 +56,6 @@ const getCareerTasks = async(code) => {
 }
 
 const getCareerTechnicalSkills = async(code) => {
-    console.log("Pulling career technical skills from O*NET Web Services...");
     const careerTechnicalSkillsUrl = "https://services.onetcenter.org/ws/mnm/careers/" + code + "/technology";
     try {
         let data = await rp(careerTechnicalSkillsUrl, ONET_OPTIONS);

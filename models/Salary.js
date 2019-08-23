@@ -1,5 +1,6 @@
 /**
  * @module models/Salary
+ * @author Devon Rojas
  */
 
 /**
@@ -8,74 +9,132 @@
 class Salary {
     /**
      * Description
-     * @param {number} low 
-     * @param {number} med 
-     * @param {number} high 
+     * @param {number} pct10 
+     * @param {number} pct25
+     * @param {number} median
+     * @param {number} pct75
+     * @param {number} pct90 
      */
-    constructor(low, med, high) {
+    constructor(pct10, pct25, median, pct75, pct90) {
+        Object.keys(arguments).forEach(key => {
+            if(isNaN(arguments[key])) {
+                if(typeof arguments[key] === "string") {
+                    if(arguments[key].indexOf("+") === -1) {
+                        throw new TypeError("Salary object constructor encountered an unhandled value.");
+                    } else {
+                        arguments[key] = arguments[key].replace("+", "").replace(",", "");
+                    }
+                } else if(typeof arguments[key] !== 'number') {
+                    throw new TypeError("Salary object constructor requires number values. Value passed in: " + arguments[key])
+                }
+            }
+            arguments[key] = +arguments[key];
+        })
         /** @private */
-        this._low = low;
+        this._Pct10  = arguments[0] || 0;
         /** @private */
-        this._median = med;
+        this._Pct25  = arguments[1] || arguments[0];
         /** @private */
-        this._high = high;
+        this._Median = arguments[2] || arguments[1] || arguments[0];
+        /** @private */
+        this._Pct75  = arguments[3] || arguments[2] || arguments[1] || arguments[0];
+        /** @private */
+        this._Pct90  = arguments[4] || arguments[3] || arguments[2] || arguments[1] || arguments[0];
     }
 
     /**
-     * Get the low salary value.
+     * Get the 10th Percentile salary value.
      * @return {number} low salary
      */
-    get low() {
-        return this._low;
+    get Pct10() {
+        return this._Pct10;
     }
 
     /**
-     * Get the median salary value.
-     * @return {number} median salary
+     * Get the 2th Percentile salary value.
+     * @return {number} low salary
      */
-    get median() {
-        return this._median;
+    get Pct25() {
+        return this._Pct25;
     }
 
     /**
-     * Get the high salary value.
-     * @return {number} high salary
+     * Get the 50th Percentile salary value.
+     * @return {number} low salary
      */
-    get high() {
-        return this._high;
+    get Median() {
+        return this._Median;
     }
 
     /**
-     * Sets the low salary value.
+     * Get the 75th Percentile salary value.
+     * @return {number} low salary
+     */
+    get Pct75() {
+        return this._Pct75;
+    }
+
+    /**
+     * Get the 90th Percentile salary value.
+     * @return {number} low salary
+     */
+    get Pct90() {
+        return this._Pct90;
+    }
+
+    /**
+     * Sets the 10th Percentile salary value.
      * @param {number} val The value to set.
      */
-    set low(val) {
+    set Pct10(val) {
         if(isNaN(val)) {
             throw new TypeError("Value must be a number.");
         }
-        this._low = val;
+        this._Pct10 = val;
     }
 
     /**
-     * Sets the median salary value.
+     * Sets the 2th Percentile salary value.
      * @param {number} val The value to set.
      */
-    set median(val) {
+    set Pct25(val) {
         if(isNaN(val)) {
             throw new TypeError("Value must be a number.");
         }
-        this._median = val;
+        this._Pct25 = val;
     }
 
     /**
-     * Sets the high salary value.
+     * Sets the 50th Percentile salary value.
      * @param {number} val The value to set.
      */
-    set high(val) {
+    set Median(val) {
         if(isNaN(val)) {
             throw new TypeError("Value must be a number.");
         }
-        this._high = val;
+        this._Median = val;
+    }
+
+    /**
+     * Sets the 75th Percentile salary value.
+     * @param {number} val The value to set.
+     */
+    set Pct75(val) {
+        if(isNaN(val)) {
+            throw new TypeError("Value must be a number.");
+        }
+        this._Pct75 = val;
+    }
+
+    /**
+     * Sets the 90th Percentile salary value.
+     * @param {number} val The value to set.
+     */
+    set Pct90(val) {
+        if(isNaN(val)) {
+            throw new TypeError("Value must be a number.");
+        }
+        this._Pct90 = val;
     }
 }
 

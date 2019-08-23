@@ -1,10 +1,26 @@
-const MongoClient = require("mongodb").MongoClient;
-const assert = require("assert");
+/**
+ * @module helpers/db
+ * @author Devon Rojas
+ * 
+ * @requires mongodb
+ * @requires {@link throttle}
+ */
 
+const MongoClient = require("mongodb").MongoClient;
 const throttle = require('./throttle.js');
 
 const uri = process.env.MONGODB_URI || "mongodb://heroku_zss53kwl:p4609camu0id25146heclidj5d@ds157723.mlab.com:57723/heroku_zss53kwl"; // Heroku MongoDB add-on
 
+/**
+ * @name addToCollection
+ * @function
+ * 
+ * @param {string} collectionName 
+ * @param {Object} data 
+ * @param {Function} writeOperation 
+ * 
+ * @return {void}
+ */
 const addToCollection = async(collectionName, data, writeOperation) => {
     try {
         if(data instanceof Array) {
@@ -15,10 +31,10 @@ const addToCollection = async(collectionName, data, writeOperation) => {
         }
         let client = await MongoClient.connect(uri, { useNewUrlParser: true });
         let DB = await client.db("heroku_zss53kwl");
-        console.log("Successfully connected to database.")
+        // console.log("Successfully connected to database.")
 
         let collection = await DB.collection(collectionName);
-        console.log("Collection <" + collectionName + ">" + " opened.");
+        // console.log("Collection <" + collectionName + ">" + " opened.");
 
         let start = Date.now();
 
@@ -28,24 +44,24 @@ const addToCollection = async(collectionName, data, writeOperation) => {
         let duration = end - start;
 
         if(res.modifiedCount == 0) {
-            let code = data['careercode'] || data['code'];
+            let code = data['careercode'] || data['code'] || data['_code'];
             console.log("No document exists for " + code + ".")
             console.log("Creating document...");
         }
 
-        let waitint = 100;
-        process.stdout.write("Writing document to collection")
-        let interval = setInterval(function() {
-            process.stdout.write(".")
-        }, waitint);
+        // let waitint = 100;
+        // process.stdout.write("Writing document to collection")
+        // let interval = setInterval(function() {
+        //     process.stdout.write(".")
+        // }, waitint);
 
-        await timeout(duration * waitint / 10);
+        // await timeout(duration * waitint / 10);
 
-        clearInterval(interval);
-        process.stdout.write("\nWrite operation successful.\n")
+        // clearInterval(interval);
+        // process.stdout.write("\nWrite operation successful.\n")
 
         await client.close();
-        console.log("Database connection closed.");
+        // console.log("Database connection closed.");
     } catch(error) {
         console.error(error.message);
         error.message = "Database error. Please contact server adminstrator for details."
@@ -54,6 +70,16 @@ const addToCollection = async(collectionName, data, writeOperation) => {
     }
 }
 
+/**
+ * @name addMultipleToCollection
+ * @function
+ * 
+ * @param {string} collectionName 
+ * @param {Object} data 
+ * @param {Function} atomicOps 
+ * 
+ * @return {void}
+ */
 const addMultipleToCollection = async(collectionName, data, atomicOps) => {
     let client = await MongoClient.connect(uri, { useNewUrlParser: true })
     let DB = await client.db("heroku_zss53kwl");
@@ -86,21 +112,39 @@ const addMultipleToCollection = async(collectionName, data, atomicOps) => {
     }
 }
 
+/**
+ * @name queryCollection
+ * @function
+ * 
+ * @param {string} collectionName 
+ * @param {Object} query 
+ * 
+ * @return {void}
+ */
 const queryCollection = async(collectionName, query) => {
     let client = await MongoClient.connect(uri, { useNewUrlParser: true });
     const DB = await client.db("heroku_zss53kwl");
-    console.log("\nSuccessfully connected to database.");
+    // console.log("\nSuccessfully connected to database.");
 
     let collection = await DB.collection(collectionName);
-    console.log("Collection <" + collectionName + "> opened");
+    // console.log("Collection <" + collectionName + "> opened");
 
-    console.log("Searching documents for: " + JSON.stringify(query));
+    // console.log("Searching documents for: " + JSON.stringify(query));
     let res = await collection.find(query).toArray();
 
     await client.close();
     return res;
 }
 
+/**
+ * @name queryMultiple
+ * @function
+ * 
+ * @param {string} collectionName 
+ * @param {Array} queryArr 
+ * 
+ * @return {void}
+ */
 const queryMultiple = async(collectionName, queryArr) => {
     let calls = [];
 
@@ -134,6 +178,15 @@ const queryMultiple = async(collectionName, queryArr) => {
     return res;
 }
 
+/**
+ * @name deleteOne
+ * @function
+ * 
+ * @param {string} collectionName 
+ * @param {Object} query 
+ * 
+ * @return {void}
+ */
 const deleteOne = async(collectionName, query) => {
     let client = await MongoClient.connect(uri, {useNewUrlParser: true});
     let DB = await client.db("heroku_zss53kwl");
@@ -150,6 +203,15 @@ const deleteOne = async(collectionName, query) => {
     console.log("Database connection closed.");
 }
 
+/**
+ * @name deleteMany
+ * @function
+ * 
+ * @param {string} collectionName 
+ * @param {Object} query 
+ * 
+ * @return {void}
+ */
 const deleteMany = async(collectionName, query) => {
     let client = await MongoClient.connect(uri, {useNewUrlParser: true});
     let DB = await client.db("heroku_zss53kwl");
@@ -166,6 +228,15 @@ const deleteMany = async(collectionName, query) => {
     console.log("Database connection closed.");
 }
 
+/**
+ * @name updateMany
+ * @function
+ * 
+ * @param {string} collectionName 
+ * @param {Object} query 
+ * 
+ * @return {void}
+ */
 const updateMany = async(collectionName, query) => {
     let client = await MongoClient.connect(uri, {useNewUrlParser: true});
     const DB = await client.db("heroku_zss53kwl");
@@ -181,6 +252,12 @@ const updateMany = async(collectionName, query) => {
     console.log("Database connection closed.")
 }
 
+/**
+ * @name cleanCollections
+ * @function
+ * 
+ * @return {void}
+ */
 const cleanCollections = async() => {
     MongoClient.connect(uri, { useNewUrlParser: true }, async(err, client) => {
         if(err) {
@@ -232,6 +309,15 @@ const cleanCollections = async() => {
     })
 }
 
+/**
+ * @name isNull
+ * @function
+ * @inner
+ * 
+ * @param {Object} data 
+ * 
+ * @return {boolean} Boolean indicating if data has any null values.
+ */
 const isNull = (data) => {
     if(data instanceof Array) {
         return !data.every(item => {
@@ -240,10 +326,6 @@ const isNull = (data) => {
     } else if(data instanceof Object) {
         return !Object.values(data).every(item => item !== null && item !== undefined);
     }
-}
-
-function timeout(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 module.exports = {

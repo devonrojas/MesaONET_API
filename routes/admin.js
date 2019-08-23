@@ -1,5 +1,7 @@
 /**
  * @module routes/admin
+ * @author Devon Rojas
+ * 
  * @requires express
  * @requires request-promise
  */
@@ -21,7 +23,7 @@ const JobTracker = require("../helpers/job_tracker.js");
 const DataExportService = require("../services/DataExportService.js");
 
 const ACADEMIC_PROGRAM_DATA = require("../academic_programs.json");
-const GROWTH_DATA = require('../bls_projected_occupational_growth_2016-2026.json');
+const MESA_PROGRAMS = require("../mesa_academic_programs_new.json");
 
 const GOOGLE_MAPS_API_KEY =
     process.env.GOOGLE_MAPS_API_KEY ||
@@ -158,12 +160,21 @@ Router.get("/export-programs", async (req, res) => {
     res.sendStatus(200);
 });
 
-const Career = require("../models/Career.js");
+const AcademicProgram = require("../models/AcademicProgram.js");
 
 Router.get("/test", async(req, res) => {
-    let t = new Career('15-1134.00');
-    await t._retrieveCareerData();
-    res.status(200).send(t);
+    let msg = "Generating " + MESA_PROGRAMS.length + " programs:";
+    MESA_PROGRAMS.forEach((program) => {
+        msg += "\n" + program.title;
+    });
+    res.status(200).send("Request received. " + msg);
+    await asyncForEach(MESA_PROGRAMS, async(program, index) => {
+        console.log("[" + (index + 1) + "/" + MESA_PROGRAMS.length + "] " + "Building " + program.title + " program.");
+
+        let p = new AcademicProgram(program.title, program.degree_types);
+        await p._retrieveAcademicProgramData();
+    })
+    console.log("\nDone!\n");
 })
 
 /**
