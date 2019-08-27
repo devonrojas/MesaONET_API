@@ -2,7 +2,12 @@
  * @module routes/program
  * @author Devon Rojas
  * 
- * @requires express
+ * @requires {@link https://www.npmjs.com/package/express| express}
+ * 
+ * @requires services/DatabaseService
+ * @requires services/DataExportService
+ * @requires models/AcademicProgram
+ * @requires helpers/Utils
  */
 
 require("dotenv").config();
@@ -16,17 +21,15 @@ const express = require('express');
 const Router = express.Router();
 
 // Module imports
-const db = require("../helpers/db.js");
-const throttle = require("../helpers/throttle.js");
-const JobTracker = require("../helpers/job_tracker.js");
+const db = require("../services/DatabaseService.js");
+const JobTracker = require("../models/JobTracker.js");
 const DataExportService = require("../services/DataExportService.js");
 const AcademicProgram = require("../models/AcademicProgram.js");
 
-const ACADEMIC_PROGRAM_DATA = require("../academic_programs.json");
+const Utils = require("../helpers/utils.js");
 
 /**
- * Method: POST
- * Adds a new program to database.
+ * Adds a new [AcademicProgram]{@link module:models/AcademicProgram} to database.
  * 
  * Checks to make sure program doesn't already exist in database. If it is
  * indeed new, then the relevant occupations and their data for the program 
@@ -41,25 +44,28 @@ const ACADEMIC_PROGRAM_DATA = require("../academic_programs.json");
  * occupations associated with the program have the program's title, url
  * and degree types added to its relevant_programs property.
  * 
- * @name post/program
+ * @name POST/program
  * @function
  * @memberof module:routes/program~programRouter
+ * 
+ * @see [DatabaseService]   {@link module:services/DatabaseService}
+ * @see [Utils]             {@link module:helpers/Utils}
  */
-Router.post("/", async (req, res) => {
+Router.post("/", async(req, res) => {
     res.setHeader("Allow-Access-Control-Origin", "*");
     const keys = [
         {
             name: "title",
             type: {
                 name: "string",
-                fn: isString
+                fn: Utils.isString
             }
         },
         {
             name: "degree_types",
             type: {
                 name: "Array",
-                fn: isArray
+                fn: Utils.isArray
             },
             allowed_vals: [
                 "AS Degree",
@@ -159,7 +165,7 @@ Router.post("/", async (req, res) => {
                     let calls = [];
 
                     // Career data pull
-                    await asyncForEach(newCareers, async (career, idx) => {
+                    await Utils.asyncForEach(newCareers, async (career, idx) => {
                         calls.push(async cb => {
                             try {
                                 process.stdout.write(
@@ -192,7 +198,7 @@ Router.post("/", async (req, res) => {
                         });
                     });
 
-                    let arr = await throttle(calls, 10, 1000);
+                    let arr = await Utils.Utils.throttle(calls, 10, 1000);
                     let errored = arr.filter(item => typeof item == "string");
                     arr = arr.filter(item => typeof item == "object");
 
@@ -202,7 +208,7 @@ Router.post("/", async (req, res) => {
                         let retryCalls = [];
 
                         console.log("Careers with errors:");
-                        await asyncForEach(errored, (career, idx) => {
+                        await Utils.asyncForEach(errored, (career, idx) => {
                             console.log("\t" + career);
                             retryCalls.push(async cb => {
                                 try {
@@ -234,7 +240,7 @@ Router.post("/", async (req, res) => {
                             });
                         });
 
-                        let retried = await throttle(retryCalls, 5, 1000);
+                        let retried = await Utils.throttle(retryCalls, 5, 1000);
                         retried = retried.filter(
                             item => typeof item == "object"
                         );
@@ -287,7 +293,7 @@ Router.post("/", async (req, res) => {
                         Object.values(obj).every(v => v != null)
                     )
                     
-                    await asyncForEach(CLEANED_DATA, async(item, index) => {
+                    await Utils.asyncForEach(CLEANED_DATA, async(item, index) => {
                         // Generate related programs for new careers
                         let relatedPrograms = await db.queryCollection("academic_programs", {"careers.code": item['code']});
                         relatedPrograms = relatedPrograms.map(program => {
@@ -415,39 +421,77 @@ Router.post("/", async (req, res) => {
 });
 
 /**
- * Method: GET
- * Retrieves program information associated with program code.
+ * Retrieves all [AcademicPrograms]{@link module:models/AcademicProgram} from database 
+ * and sends back their titles and codes.
  * 
- * @name get/program/:code
+ * @name GET/
+ * @function
+ * @memberof module:routes/program~programRouter
+ * 
+ * @see [DatabaseService]   {@link module:services/DatabaseService}
+ */
+Router.get("/", async(req, res) => {
+    try {
+        // Empty query to return all documents in programs collection
+        let programs = await db.queryCollection("programs", {});
+        programs = programs.map(program => {
+            return {
+                title: program._title,
+                code: program._code
+            }
+        }).sort((a, b) => {
+            const titleA = a.title.toLowerCase();
+            const titleB = b.title.toLowerCase();
+            let comp = 0;
+            if(titleA > titleB) {
+                comp = 1;
+            } else if(titleA < titleB) {
+                comp = -1;
+            }
+            return comp;
+        })
+        res.status(200).send({programs, total: programs.length});
+    } catch(error) {
+        console.error(error.message);
+        if(error.statusCode) {
+            res.status(error.statusCode).send(error.message);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+})
+
+/**
+ * Retrieves [AcademicProgram]{@link module:models/AcademicProgram} from database
+ * using the program code.
+ * 
+ * @name GET/program/:code
  * @function
  * @memberof module:routes/program~programRouter
  * 
  * @param {number} code Program code to look up
  */
-Router.get("/:code", (req, res) => {
+Router.get("/:code", async(req, res) => {
     let code = req.params.code;
-    let data = ACADEMIC_PROGRAM_DATA.find(x => x.code == code);
-
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    if (data) {
-        res.status(200).send(data);
-    } else {
-        res.status(400).send("Not a valid program code. Please try again.");
+    try {
+        if(isNaN(code)) {
+            throw new Error("Program code must be a number.");
+        }
+        code = +code;
+        let program = await db.queryCollection("programs", {"_code": code});
+        if(program.length > 0) {
+            res.status(200).send(program[0]);
+        } else {
+            throw new Error("No program found. Please try again.")
+        }
+    } catch(error) {
+        console.error(error.message);
+        if(error.statusCode) {
+            res.status(error.statusCode).send(error.message);
+        } else {
+            res.status(404).send(error.message);
+        }
     }
 });
-
-const isString = val => {
-    return typeof val === "string";
-};
-
-const isArray = val => {
-    return Array.isArray(val);
-};
-
-const asyncForEach = async (arr, cb) => {
-    for (let i = 0; i < arr.length; i++) {
-        await cb(arr[i], i, arr);
-    }
-};
 
 module.exports = Router;

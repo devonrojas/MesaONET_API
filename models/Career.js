@@ -1,20 +1,25 @@
 /**
  * @module models/Career
  * @author Devon Rojas
+ * 
+ * @requires services/DatabaseService
+ * @requires services/ONETService
+ * @requires services/CareerOneStopService
  */
 
-const db = require("../helpers/db");
+const db = require("../services/DatabaseService");
 
 const ONETService = require("../services/ONETService.js");
 const CareerOneStopService = require("../services/CareerOneStopService.js");
 
 /**
- * Description.
+ * Class representing O*NET and CareerOneStop Occupation data, and any
+ * academic programs associated with it.
  */
 class Career {
     /**
-     * Description.
-     * @param {string} code 
+     * Create a career.
+     * @param {string} code A valid O*NET Code.
      */
     constructor(code) {
         /** @private */
@@ -43,7 +48,7 @@ class Career {
      * Sets the career's related programs.
      * @param arr 
      */
-    set related_programs(arr) {
+    setRelatedPrograms(arr) {
         this._related_programs = arr;
     }
 
@@ -51,12 +56,13 @@ class Career {
      * Gets the career's related programs.
      * @return {Array} Array of related programs.
      */
-    get related_programs() {
+    getRelatedPrograms() {
         return this._related_programs;
     }
 
     /**
      * @name _retrieveCareerData
+     * @function
      */
     async retrieveCareerData() {
         try {
@@ -107,6 +113,7 @@ class Career {
 
     /**
      * @name validateCareer
+     * @function
      * 
      * Checks all Career object properties for empty Arrays, Objects, and
      * null and undefined values.
@@ -141,7 +148,6 @@ class Career {
      * @name buildSalary
      * 
      * @private
-     * @inner
      * @param {Object} wages 
      */
     _buildSalary(wages) {
@@ -170,7 +176,6 @@ class Career {
      * @name buildTasks
      * 
      * @private
-     * @inner
      * @param {Array} tasks 
      */
     _buildTasks(tasks) {

@@ -2,8 +2,11 @@
  * @module routes/career
  * @author Devon Rojas
  * 
- * @requires express
- * @requires request-promise
+ * @requires {@link https://www.npmjs.com/package/express| express}
+ * @requires {@link https://www.npmjs.com/package/request-promise| request-promise}
+ * 
+ * @requires services/DatabaseService
+ * @requires services/CareerOneStopService
  */
 
 require("dotenv").config();
@@ -18,26 +21,57 @@ const rp = require("request-promise");
 const Router = express.Router();
 
 // Module imports
-const db = require("../helpers/db.js");
-const Program = require("../helpers/main.js");
-const JobTracker = require("../helpers/job_tracker.js");
-const CareerOneStop = require("../services/CareerOneStopService.js");
-
-
-const ACADEMIC_PROGRAM_DATA = require("../academic_programs.json");
+const db = require("../services/DatabaseService.js");
+const JobTracker = require("../models/JobTracker.js");
 
 const GOOGLE_MAPS_API_KEY =
     process.env.GOOGLE_MAPS_API_KEY;
 const GOOGLE_MAPS_URI =
     "https://maps.googleapis.com/maps/api/geocode/json?address=";
 
-
 /**
- * Method: GET
- * Retreives occupation information associated with a program
+ * Retrieves all [Careers]{@link module:models/Career} in database.
+ * 
+ * @name GET/
+ * @function
+ * @memberof module:routes/career~careerRouter
+ */
+Router.get("/", async(req, res) => {
+    try {
+        // Empty query to return all documents in careers collection
+        let careers = await db.queryCollection("careers", {});
+        careers = careers.map(career => {
+            return {
+                title: career._title,
+                code: career._code
+            }
+        }).sort((a, b) => {
+            const codeA = a.code;
+            const codeB = b.code;
+
+            let comp = 0;
+            if(codeA > codeB) {
+                comp = 1;
+            } else if(codeA < codeB) {
+                comp = -1;
+            } 
+            return comp
+        });
+        res.status(200).send({careers, total: careers.length});
+    } catch(error) {
+        console.error(error.message);
+        if(error.statusCode) {
+            res.status(error.statusCode).send(error.message);
+        } else {
+            res.sendStatus(500);
+        }
+    }
+})
+/**
+ * Retrieves occupation information associated with a career
  * code, location, and radius.
  * 
- * @name get/career/:code/:location/:radius
+ * @name GET/career/:code/:location/:radius
  * @function
  * @memberof module:routes/career~careerRouter
  *
@@ -54,7 +88,7 @@ Router.get("/:code/:location/:radius", async (req, res) => {
         : res
               .status(400)
               .send(
-                  "Please provide a location ('US', 'CA', '92111', 'San Diego', etc."
+                  "Please provide a location ('US', 'CA', '92111', 'San Diego', etc.)"
               );
     let radius = req.params.radius
         ? req.params.radius
@@ -62,50 +96,11 @@ Router.get("/:code/:location/:radius", async (req, res) => {
 
     res.setHeader("Access-Control-Allow-Origin", "*");
 
-    let match;
     console.log("Searching for career...");
-    ACADEMIC_PROGRAM_DATA.forEach(program => {
-        let c = program.careers.find(career => career.code == code);
-        if (c) {
-            match = c;
-            return;
-        }
-    });
-    if (match) {
+    let career = await db.queryCollection("careers", {"_code": code})
+    if (career.length > 0) {
         console.log("Career found!");
-
-        let growth = match.growth;
-        let title = match.title;
-
-        let technical_skills = await Program.getCareerTechnicalSkills(code);
-
-        let related = ACADEMIC_PROGRAM_DATA.filter(x =>
-            x.careers.some(career => career.code == code)
-        ).map(x => {
-            let path =
-                "/" +
-                x.title
-                    .toLowerCase()
-                    .replace("and ", "")
-                    .replace(/['\/]|/g, "")
-                    .replace(/ /g, "-") +
-                ".shtml";
-            return {
-                title: x.title,
-                path: path,
-                degree_types: x.degree_types
-            };
-        });
-
-        let d = await CareerOneStop.fetch(
-            code,
-            title,
-            growth,
-            location,
-            radius
-        );
-        d["technical_skills"] = technical_skills;
-        d["related_programs"] = related;
+        career = career[0];
 
         let url = GOOGLE_MAPS_URI + location + "&key=" + GOOGLE_MAPS_API_KEY;
         let options = {
@@ -217,21 +212,15 @@ Router.get("/:code/:location/:radius", async (req, res) => {
         }
 
         if (jobs[0].hasOwnProperty("jobcount")) {
-            d["jobcount"] = jobs[0].jobcount;
+            career["jobcount"] = jobs[0].jobcount;
         }
 
         console.log("Career retrieval complete.");
-        res.status(200).send(d);
+        res.status(200).send(career);
     } else
         return res
             .status(400)
             .send("Could not locate career. Please try again.");
 });
-
-const asyncForEach = async (arr, cb) => {
-    for (let i = 0; i < arr.length; i++) {
-        await cb(arr[i], i, arr);
-    }
-};
 
 module.exports = Router;

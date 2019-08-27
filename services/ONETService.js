@@ -2,7 +2,7 @@
  * @module services/ONETService
  * @author Devon Rojas
  * 
- * @requires request-promise
+ * @requires {@link https://www.npmjs.com/package/request-promise| request-promise}
  */
 
 require("dotenv").config();
@@ -25,11 +25,15 @@ const RELEVANCE_SCORE_CAP = 50;
 
 
 /**
+ * Retrieves technical skills associated with an O*NET
+ * Occupation code.
+ * 
  * @name getCareerTechnicalSkills
  * @memberof module:services/ONETService
  * @function
  * 
- * @param {string} code 
+ * @param {string} code O*NET code to query.
+ * @return {null|Array} Array of technical skills.
  */
 const getCareerTechnicalSkills = async(code) => {
     // console.log("Pulling career technical skills from O*NET Web Services...");
@@ -38,10 +42,12 @@ const getCareerTechnicalSkills = async(code) => {
         let data = await rp(careerTechnicalSkillsUrl, ONET_OPTIONS);
         if(data.hasOwnProperty("category")) {
             let technical_skills = data.category;
+            // Map technical skills to just its name.
             technical_skills = technical_skills
             .map(skill => skill.example
                 .map(el => el.name));
             
+            // Flatten array
             let arr = [].concat.apply([], technical_skills);
 
             return arr;
@@ -57,7 +63,7 @@ const getCareerTechnicalSkills = async(code) => {
  * @memberof module:services/ONETService
  * @function
  * 
- * @param {string} url 
+ * @param {string} url URL to send a request to.
  */
 const fetch = async(url) => {
     try {
@@ -74,29 +80,6 @@ const fetch = async(url) => {
             ? result.occupation.filter(res => res.relevance_score > RELEVANCE_SCORE_CAP)
                     .map(res => {return {code: res.code, title: res.title}}) 
             : null;
-        }
-        else if(result.hasOwnProperty('job_outlook')) {
-            if(result.job_outlook.hasOwnProperty('salary')) {
-                let l = result.job_outlook.salary.annual_10th_percentile;
-                let m = result.job_outlook.salary.annual_median ? 
-                                result.job_outlook.salary.annual_median 
-                        : result.job_outlook.salary.annual_median_over ? 
-                            result.job_outlook.salary.annual_median_over 
-                        : null;
-                let h = result.job_outlook.salary.annual_90th_percentile ? 
-                            result.job_outlook.salary.annual_90th_percentile
-                        : result.job_outlook.salary.annual_90th_percentile_over ? 
-                            result.job_outlook.salary.annual_90th_percentile_over
-                        : null;
-
-                if(l && m && h) {
-                    result = {
-                        low: l,
-                        median: m,
-                        high: h
-                    }
-                } else return null;
-            } else return null;
         }
         else {
             return null;

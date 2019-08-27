@@ -2,21 +2,23 @@
  * @module services/DataExportService
  * @author Devon Rojas
  * 
- * @requires {@link CareerService}
- * @requires {@link CareerOneStopService}
+ * @requires models/Career
+ * @requires helpers/Utils
  */
 
 require("dotenv").config();
-const CareerService = require("../helpers/main");
-const CareerOneStopService = require("./CareerOneStopService");
+
+const Career = require("../models/Career.js");
+const Utils = require("../helpers/utils.js");
 
 /**
- * Description
+ * @deprecated
+ * Class containing logic to build occupations from an array of O*NET Codes.
  */
 class DataExportService {
 
     /**
-     * Description
+     * Builds DataExportService object.
      * @param {Array} params 
      */
     constructor(params) {
@@ -25,38 +27,28 @@ class DataExportService {
     }
 
     /**
-     * @name buildData
-     * Generates occupation data for each .
+     * Generates occupation data from an array of O*NET occupation codes.
+     * @async
      * 
-     * @param {Array} arr 
-     * @param {Array} data 
+     * @param {Array} arr       Array of codes to pull data from.
+     * @param {Array} [data=[]] Array to add retrieved data to.
+     * 
+     * @return {Array}  Complete array of [Careers]{@link module:models/Career}.
      */
     async buildData(arr, data = []) {
-        await asyncForEach(arr, async(item, index) => {
+        await Utils.asyncForEach(arr, async(item, index) => {
             console.log("[" + (index + 1) + "/" + arr.length + "]" + " Pulling " + item.code + " data...");
             try {
-            let career_one_stop_data = await CareerOneStopService.fetch(item.code, item.title, item.growth, ...this.defaultParams);
-            let technical_skills = await CareerService.getCareerTechnicalSkills(item.code);
-
-            const o = {
-                ...item,
-                ...career_one_stop_data,
-                technical_skills: technical_skills
-            }
+            let c = new Career(item.code);
+            c.retrieveCareerData();
             
-            data.push(o);
+            data.push(c);
 
             } catch(error) {
                 console.error("Error pulling data.");
             }
         })
         return data;
-    }
-}
-
-const asyncForEach = async(arr, cb) => {
-    for(let i = 0; i < arr.length; i++) {
-        await cb(arr[i], i, arr);
     }
 }
 

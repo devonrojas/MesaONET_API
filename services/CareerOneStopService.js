@@ -2,49 +2,30 @@
  * @module services/CareerOneStopService
  * @author Devon Rojas
  * 
- * @requires request-promise
+ * @requires {@link https://www.npmjs.com/package/request-promise| request-promise}
  */
 
 require("dotenv").config();
 const rp = require('request-promise');
 
-const CAREER_ONE_STOP_API_TOKEN = process.env.CAREER_ONE_STOP_API_TOKEN;
-const CAREER_ONE_STOP_API_USERID = process.env.CAREER_ONE_STOP_API_USERID;
-
-const CAREER_ONE_STOP_HEADERS = {
-    'Authorization': "Bearer " + CAREER_ONE_STOP_API_TOKEN
-}
-
-const CAREER_ONE_STOP_BASE_URI = "https://api.careeronestop.org";
+const CAREER_ONE_STOP_API_TOKEN     = process.env.CAREER_ONE_STOP_API_TOKEN;
+const CAREER_ONE_STOP_API_USERID    = process.env.CAREER_ONE_STOP_API_USERID;
+const CAREER_ONE_STOP_HEADERS       = { 'Authorization': "Bearer " + CAREER_ONE_STOP_API_TOKEN };
+const CAREER_ONE_STOP_BASE_URI      = "https://api.careeronestop.org";
 
 /**
+ * Retrieves O*NET occupation data from CareerOneStop API.
+ * 
  * @name fetch
  * @memberof module:services/CareerOneStopService
  * @function
  * 
- * @param {string} code 
- * @param {string} location 
- */
-const fetch = async(code, location) => {
-    try {
-        return await buildOccupationDetails(code, location);
-    } catch(error) {
-        if(error.error) {
-            console.error(error.error.Error);
-        }
-    }
-}
-
-/**
- * @name buildOccupationDetails
- * @inner
- * @function
- * @memberof module:services/CareerOneStopService
+ * @param {string} code              O*NET Occupation code.
+ * @param {string} [location='US']   Location to query (state or zip code).
  * 
- * @param {string} code 
- * @param {string} location 
+ * @return {object} Occupation data.
  */
-const buildOccupationDetails = async(code, location = "US") => {
+const fetch = async(code, location = 'US') => {
     const OCCUPATION_DETAILS_URI = `/v1/occupation/${CAREER_ONE_STOP_API_USERID}/${code}/${location}`;
 
     let params = {
@@ -68,10 +49,54 @@ const buildOccupationDetails = async(code, location = "US") => {
 }
 
 /**
+ * Retrieves job posting data for an O*NET Occupation code.
+ * 
+ * @name fetchJobDetail
+ * @memberof module:services/CareerOneStopService
+ * @function
+ * 
+ * @param {string} code             O*NET Occupation code to fetch data for.
+ * @param {string} [location="US"]  Location to query.
+ * @param {number} [radius=25]      Radius from location to search.
+ * @param {number} [days=30]        Length to retrieve data back to.
+ * @param {number} [tries=0]        Amount of tries of function (error-handling purposes)
+ * 
+ * @return {object} Job posing data for occupation.
+ */
+const fetchJobDetail = async(code, location = 'US', radius = 25, days = 30, tries = 0) => {
+    const OCCUPATION_JOB_DETAIL_URI = `/v1/jobsearch/${CAREER_ONE_STOP_API_USERID}/${code}/${location}/${radius}/${days}`;
+    let options = buildOptions(OCCUPATION_JOB_DETAIL_URI);
+
+    try {
+        const data = await rp(options);
+        return data;
+    } catch(error) {
+        if(error.statusCode == 404) {
+            if(tries == 0) {
+                console.log("No data found for " + location + ". Trying CA...");
+                return fetchJobDetail(code, 'CA', radius, days, 1);
+            } else if(tries == 1) {
+                console.log("No data found for " + location + ". Trying US...");
+                return fetchJobDetail(code, 'US', radius, days, 2);
+            } else {
+                return null;
+            }
+        } else {
+            if(error.name == "RequestError") {
+                console.log("Request timed out.");
+                return fetchJobDetail(code, location, radius, days, 2);
+            } else {
+                console.error("Unknown error.");
+            }
+        }
+    }
+} 
+
+/**
  * @name buildOptions
- * @inner
  * @function
  * @memberof module:services/CareerOneStopService
+ * @private
  * 
  * @param {string} uri 
  * @param {Object} params 
@@ -86,4 +111,4 @@ const buildOptions = (uri, params) => {
     }
 }
 
-module.exports = { fetch }
+module.exports = { fetch, fetchJobDetail }

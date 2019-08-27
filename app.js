@@ -1,12 +1,19 @@
 /**
- * @module careerEdAPI
+ * @module CareerEducationAPI
  * @author Devon Rojas
  * 
- * @requires express
+ * @requires {@link https://www.npmjs.com/package/express| express}
+ * @requires {@link https://www.npmjs.com/package/cors| cors}
+ * @requires {@link https://nodejs.org/api/fs.html| fs}
+ * @requires {@link https://www.npmjs.com/package/body-parser| body-parser}
+ * 
+ * @requires routes/program
+ * @requires routes/career
+ * @requires routes/admin
  */
 
 require("dotenv").config();
-const PORT = process.env.PORT || 7000;
+const PORT = process.env.PORT || 8000;
 
 // Package imports
 const express = require("express");
@@ -14,6 +21,7 @@ const cors = require("cors");
 const fs = require("fs");
 const bodyParser = require("body-parser");
 
+// Express Routers
 const programRoutes = require("./routes/program.js");
 const careerRoutes = require("./routes/career.js");
 const adminRoutes = require("./routes/admin.js");
@@ -46,9 +54,10 @@ const logger = (req, res, next) => {
 };
 
 /**
+ * express module
  * @type {object}
  * @const
- * @namespace main
+ * @namespace app
  */
 const app = express();
 
@@ -64,29 +73,53 @@ app.use(cors(corsOptions));
 app.use(logger);
 
 // Routing middleware
+/**
+ * Defines available /program routes
+ * @memberof module:CareerEducationAPI~app
+ */
 app.use("/program", programRoutes);
+/**
+ * Defines available /career routes
+ * @memberof module:CareerEducationAPI~app
+ */
 app.use("/career", careerRoutes);
+/**
+ * Defines available /admin routes
+ * @memberof module:CareerEducationAPI~app
+ */
 app.use("/admin", adminRoutes);
 
 /**
- * Method: GET
  * Lists all routes available on API.
  * 
- * @name get/
+ * @name GET/
  * @function
- * @memberof module:careerEdAPI~main
+ * @memberof module:CareerEducationAPI~app
  */
 app.get("/", (req, res) => {
-    let routes = [programRoutes, careerRoutes, adminRoutes].map(router => {
+    let routes = [programRoutes].concat(careerRoutes, adminRoutes).map(router => {
         return router.stack.filter(layer => {
             return layer.route != undefined;
         })
         .map(layer => layer.route.path)
-        .join("<br>");
     })
-    res.send("Available routes for this program:<br>" + routes);
+    routes = [].concat.apply([], routes).reduce((str, route) => {
+        str += route + "\n";
+        return str;
+    }, "");
+    res.send("Available routes for this program:\n" + routes);
 });
 
-app.listen(PORT, () => console.log(`App running on port: ${PORT}.`));
+/**
+ * Loads application documentation pages.
+ * 
+ * @name GET/docs
+ * @function
+ * @memberof module:CareerEducationAPI~app
+ */
+app.use("/docs", express.static("out"));
 
-// Helper functions
+/**
+ * Instantiates Express application on specified PORT
+ */
+app.listen(PORT, () => console.log(`App running on port: ${PORT}.`));
