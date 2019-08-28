@@ -3,6 +3,8 @@
  * @author Devon Rojas
  */
 
+const readline = require("readline");
+
 /**
  * Class containing utility functions for application.
  */
@@ -86,6 +88,15 @@ class Utils {
         console.log(`Total calls: ${totalCalls}`);
         let p = [];
         while(calls.length > 0) {
+            var twirlTimer = (function() {
+                var P = ["\\", "|", "/", "-"];
+                var x = 0;
+                return setInterval(function() {
+                  process.stdout.write("\r" + P[x++] + " Calls left to execute: " + calls.length + "...");
+                  x &= 3;
+                }, 250);
+              })();
+
             let callstoExecute = calls.slice(0, rateLimitCount);
             calls = calls.slice(rateLimitCount, calls.length);
     
@@ -94,7 +105,11 @@ class Utils {
     
             let res = await Promise.all(promises);
             p = p.concat(res);
-            await timeout(rateLimitTime);
+            await Utils.timeout(rateLimitTime);
+
+            // Return stdout to beginning of line
+            clearInterval(twirlTimer);
+            process.stdout.write("\r");
         }
         return p;
     }

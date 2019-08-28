@@ -45,12 +45,6 @@ const addToCollection = async(collectionName, data, writeOperation) => {
         let end = Date.now();
         let duration = end - start;
 
-        if(res.modifiedCount == 0) {
-            let code = data['careercode'] || data['code'] || data['_code'];
-            console.log("No document exists for " + code + ".")
-            console.log("Creating document...");
-        }
-
         // let waitint = 100;
         // process.stdout.write("Writing document to collection")
         // let interval = setInterval(function() {
@@ -93,7 +87,6 @@ const addMultipleToCollection = async(collectionName, data, atomicOps) => {
     console.log("Collection <" + collectionName + ">" + " opened.");
 
     let atomic = atomicOps(data);
-    console.log(atomic.slice(0, 10));
 
     process.stdout.write("Total documents to add: " + atomic.length);
     process.stdout.write("\nWriting documents to database.");

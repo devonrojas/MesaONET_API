@@ -41,7 +41,7 @@ class AcademicProgram {
 
     /**
      * Checks database for existing program data, and if it doesn't exist, builds
-     * Careers out of all O*NET Occupations associated with it. Each career has their
+     * Careers out of all O*NET Occupations associated with the program. Each career has their
      * related programs updated as it is generated. If program data _does_ exist, the
      * data is copied into the AcademicProgram object, and the contained careers are
      * scanned for any related programs updates.
@@ -49,7 +49,7 @@ class AcademicProgram {
      * @async
      * @see [Career]            {@link module:models/Career}
      * @see [ONETService]       {@link module:services/ONETService}
-     * @see [DatabaseService]    {@link module:services/DatabaseService}
+     * @see [DatabaseService]   {@link module:services/DatabaseService}
      * 
      * @return {void}
      */

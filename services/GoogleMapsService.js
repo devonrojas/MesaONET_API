@@ -7,10 +7,8 @@
 
 const rp = require("request-promise");
 
-const GOOGLE_MAPS_API_KEY =
-    process.env.GOOGLE_MAPS_API_KEY;
-const GOOGLE_MAPS_URI =
-    "https://maps.googleapis.com/maps/api/geocode/json?address=";
+const GOOGLE_MAPS_API_KEY =process.env.GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_URI = "https://maps.googleapis.com/maps/api/geocode/json?address=";
 
 /**
  * Retrieves zip code, county, state, and country location components from a keyword.
@@ -23,11 +21,11 @@ const GOOGLE_MAPS_URI =
  */
 const findLocation = async(location) => {
     let res = await _fetch(location);
-
     res = res
     .map(item => {return { short_name: item.short_name, types: item.types }})
     .filter(item => 
         !item.types.includes("locality") &&
+        !item.types.includes("neighborhood") &&
         !item.types.includes("administrative_area_level_2"));
     return res;
 }

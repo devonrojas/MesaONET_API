@@ -10,6 +10,8 @@
 const CareerOneStopService = require("../services/CareerOneStopService.js");
 const GoogleMapsService = require("../services/GoogleMapsService.js");
 const Utils = require("../helpers/utils.js");
+const db = require("../services/DatabaseService.js");
+const FETCH_PERIOD = 30;
 
 /**
  * Class containing logic to build job posting data for an O*NET Occupation.
@@ -19,15 +21,12 @@ class JobTracker {
      * Creates a JobTracker object.
      * @param {object} location 
      * @param {string} location.zip
-     * @param {string} location.county
-     * @param {string} location.state
      */
     constructor(code, location = {zip: "92111"}) {
         /** @private */
         this._code = code;
         /** @private */
         this._location = location;
-
         /** @private */
         this._locations = [];
         /** @private */
@@ -52,28 +51,66 @@ class JobTracker {
     async retrieveData() {
         await this._getLocations();
         await Utils.asyncForEach(this._locations, async(location) => {
-            // let res = await db.queryCollection("job_tracking", {"_code": this._code, "_areas.area.short_name": location.short_name});
-            // If no data exists for location
+            let areaSearch = location.short_name;
 
-            let area;
-            // If location is a zip code, look up appropriate county
-            if(location.types.includes('postal_code')) {
-                area = new CountyArea(location);
-                area.setArea(await GoogleMapsService.getCounty(location.short_name));
-            } else {
-                area = new PrimitiveArea(location);
+            if(location.types.includes("administrative_area_level_2")) {
+                return;
+            }
+            // Map zip code to county for querying purposes
+            if(location.types.includes("postal_code")) {
+                areaSearch = (await GoogleMapsService.getCounty(areaSearch)).short_name;   
             }
 
-            await area.init(this._code);
-            this._areas.push(area);
+            // Check if record already exists for career code and current location
+            let res = await db.queryCollection("job_tracking", {"_code": this._code, "_areas.area.short_name": areaSearch});
 
-            // } else {
-            //     // Check if location needs to be updated
-            //     let area = new Area(location);
-            //     Object.assign(area, res[0]);
-            //     await area.update(this._code);
-            //     console.log(area);
-            // }
+            let area;
+
+            // Job Tracker record doesn't exist for area in database
+            if(res.length === 0) {
+                console.log("Data doesn't exist for " + areaSearch + ".");
+                // If location is a zip code, look up appropriate county
+                if(location.types.includes('postal_code')) {
+                    area = new CountyArea(location);
+                    area.setArea(await GoogleMapsService.getCounty(location.short_name));
+                } else {
+                    area = new PrimitiveArea(location);
+                }
+                await area.init(this._code);
+                this._areas.push(area);
+
+                // Push new area onto Job Tracker record in database
+                const writeOperation = (data) => [
+                    {"_code": data["code"] },
+                    {
+                        $push: {"_areas": data["area"]}
+                    },
+                    { upsert: true}
+                ]
+                await db.addToCollection("job_tracking", {code: this._code, area: area}, writeOperation);
+
+            } // Job Tracker area record exists already
+            else {
+                if(res[0].hasOwnProperty("lastUpdated")) {
+                    delete res[0]["lastUpdated"];
+                }
+                let index = res[0]["_areas"].map(item => item.area.short_name).indexOf(areaSearch);
+                if(location.types.includes('postal_code')) {
+                    area = Object.assign(new CountyArea(location), res[0]["_areas"][index]);
+                    area.addZipCodeAlias(location.short_name);
+                } else {
+                    area = Object.assign(new PrimitiveArea(location), res[0]["_areas"][index]);
+                }
+                // Update any data in area if necessary
+                await area.update(this._code);
+
+                // Update database document with new data
+                const writeOperation = (data) => [
+                    {"_code": data["code"], "_areas.area.short_name": areaSearch },
+                    { $set: { "_areas.$": data["area"]} }
+                ]
+                await db.addToCollection("job_tracking", {code: this._code, area: area}, writeOperation);
+            }
         })
     }
 
@@ -89,12 +126,20 @@ class JobTracker {
     async _getLocations() {
         let location = await GoogleMapsService.findLocation(this._location.zip);
 
-        let locations = [];
-        // let data = await db.queryCollection("job_tracking", {"careercode": this._code});
-        // data = data.map(item => item.jobcount.map(el => el.area));
-        // let locations = data[0];
-
-        this._locations = [...new Set(locations.concat(location))];
+        let locations;
+        let data = await db.queryCollection("job_tracking", {"_code": this._code});
+        if(data.length !== 0) {
+            data = data.map(item => item["_areas"].map(el => el.area));
+            locations = data[0];
+        } else {
+            locations = [];
+        }
+        locations = locations.concat(location);
+        // Filter any duplicate locations out of array
+        this._locations = [...new Set(Array.from(locations).map(area => area.short_name))]
+        .map(area => {
+            return locations.find(loc => loc.short_name === area)
+        });
     }
 }
 
@@ -115,6 +160,10 @@ class PrimitiveArea {
         this.data = [];
         /** @private */
         this.top10Companies = [];
+    }
+
+    static get FETCH_PERIOD() {
+        return FETCH_PERIOD;
     }
 
     /**
@@ -164,22 +213,20 @@ class PrimitiveArea {
 
     // FIX
     /**
-     * Updates area with any necesssary job records.
+     * Updates area with any necessary job records.
      * @async 
      * 
      * @param {string} code
      */
     async update(code) {
         try {
-            await Utils.asyncForEach(this.data, async(record) => {
-                let idx = radius.data.indexOf(item => (item.month == new Date().getMonth() + 1) && (item.year == new Date().getFullYear()));
-                // If no data for current month and year in radius
-                if(idx === -1) {
-                    await radius.fetch(this.area.short_name, code);
-                } else {
-                    console.log(this.area = " area data doesn't need to be updated.");
-                }
-            })
+            // Verify that area needs to be updated
+            let needToUpdate = this.data.every(record => JobRecord.needsToBeUpdated(record));
+            if(needToUpdate) {
+                await this.fetch(code);
+            } else {
+                // console.log("Area doesn't need to be updated at this time.");
+            }
         } catch(error) {
             console.error(error.messsage);
         }
@@ -196,7 +243,7 @@ class PrimitiveArea {
         try {
             let record = new JobRecord();
             
-            let jobs = await CareerOneStopService.fetchJobDetail(code, area, radius, 30);
+            let jobs = await CareerOneStopService.fetchJobDetail(code, area, radius, PrimitiveArea.FETCH_PERIOD);
             if(jobs) {
                 record.setJobCount(jobs.hasOwnProperty("Jobcount") ? +jobs["Jobcount"] : 0);
     
@@ -262,6 +309,44 @@ class CountyArea extends PrimitiveArea {
         this.data = [new AreaRadius(25), new AreaRadius(50), new AreaRadius(100)];
     }
 
+    addZipCodeAlias(zip) {
+        if(typeof zip === 'string') {
+            if(isNaN(parseInt(zip))) {
+                throw new TypeError("Argument could not be processed.");
+            } else {
+                if(this._zip_code_aliases.indexOf(zip) === -1) {
+                    this._zip_code_aliases.push(zip.toString());
+                }
+            }
+        } else if(typeof zip === 'number') {
+            if(zip.toString().length !== 5) {
+                throw new TypeError("Argument is not a valid zip code. Argument must contain 5 digits.");
+            } else {
+                if(this._zip_code_aliases.indexOf(zip) === -1) {
+                    this._zip_code_aliases.push(zip.toString());
+                }
+            }
+        } else {
+            throw new TypeError("Argument could not be processed. Argument must be a 5 digit number or string.")
+        }
+    }
+
+    async update(code) {
+        try {
+            // Test only first AreaRadius object's data
+            let needToUpdate = this.data[0].data.every(record => JobRecord.needsToBeUpdated(record));
+
+            if(needToUpdate) {
+                // Fetch updated data for all AreaRadius objects
+                await this.fetch(code);
+            } else {
+                // console.log("Area doesn't need to be updated at this time.")
+            }
+        } catch(error) {
+            console.error(error.messsage);
+        }
+    }
+
     /**
      * Retrieves job data for an area with different radius values.
      * @override
@@ -271,12 +356,11 @@ class CountyArea extends PrimitiveArea {
     async fetch(code) {
         let index = Math.floor(Math.random() * (+this._zip_code_aliases.length));
         let location = this._zip_code_aliases[index];
-
         try {
             await Utils.asyncForEach(this.data, async(radius) => {
                 let record = new JobRecord();
             
-                let jobs = await CareerOneStopService.fetchJobDetail(code, location, radius._radius, 30);
+                let jobs = await CareerOneStopService.fetchJobDetail(code, location, radius._radius, PrimitiveArea.FETCH_PERIOD);
                 if(jobs) {
                     record.setJobCount(jobs.hasOwnProperty("Jobcount") ? +jobs["Jobcount"] : 0);
         
@@ -313,6 +397,7 @@ class CountyArea extends PrimitiveArea {
                         throw new Error("No company data for " + code);
                     }
                 }
+                radius = Object.assign(new AreaRadius(radius._radius), radius);
                 radius.addRecord(record);
             })
         } catch(error) {
@@ -419,6 +504,15 @@ class JobRecord {
     getCompanyCount() {
         return this._companycount;
     }
+
+    static needsToBeUpdated(record) {
+       let d = new Date();
+       let month = d.getMonth() + 1;
+       let year = d.getFullYear();
+
+       return (month > record._month) || (year > record._year);
+    }
+    
 }
 
 module.exports = JobTracker;

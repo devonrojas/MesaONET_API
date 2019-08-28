@@ -5,12 +5,14 @@
  * @requires services/DatabaseService
  * @requires services/ONETService
  * @requires services/CareerOneStopService
+ * @requires models/JobTracker
  */
 
 const db = require("../services/DatabaseService");
-
 const ONETService = require("../services/ONETService.js");
 const CareerOneStopService = require("../services/CareerOneStopService.js");
+
+const JobTracker = require("./JobTracker.js");
 
 /**
  * Class representing O*NET and CareerOneStop Occupation data, and any
@@ -49,7 +51,11 @@ class Career {
      * @param arr 
      */
     setRelatedPrograms(arr) {
-        this._related_programs = arr;
+        if(Array.isArray(arr)) {
+            this._related_programs = arr;
+        } else {
+            throw new TypeError("Argument must be an array.");
+        }
     }
 
     /**
@@ -61,14 +67,35 @@ class Career {
     }
 
     /**
-     * @name _retrieveCareerData
-     * @function
+     * Adds a program to the object's related_programs array.
+     * @param {Object} program 
+     */
+    addRelatedProgram(program) {
+        if(this._related_programs.map(p => p.title).indexOf(program.title) === -1) {
+            this._related_programs.push(program);
+        } else {
+            console.log(program.title + " is already in related programs array.");
+        }
+    }
+
+    /**
+     * Checks database for existing career data, and if it doesn't exist, builds
+     * a new Career object. If a new object is created, a {@link module:models/JobTracker|JobTracker}
+     * object is also generated and added to its appropriate database collection.
+     * @async
+     * 
+     * @see {@link module:services/DatabaseService|DatabaseService}
+     * @see {@link module:services/ONETService|ONETService}
+     * @see {@link module:services/CareerOneStopService|CareerOneStopService}
+     * @see {@link module:models/JobTracker|JobTracker}
      */
     async retrieveCareerData() {
         try {
             // Check if career data has already been generated. If it has, just return 
             // it instead of re-pulling data from ONET & CareerOneStop APIs.
             let existingCareer = await db.queryCollection("careers", {code: this._code});
+
+            // Career doesn't exist
             if(existingCareer.length === 0) {
                 let career_one_stop_data = await CareerOneStopService.fetch(this._code, '92111');
 
@@ -90,21 +117,31 @@ class Career {
                     ]
                 }
                 await db.addToCollection("careers", this, writeOp);
-            } else {
+
+                // Create a job tracking record for the new career
+                let job_tracker = new JobTracker(this._code);
+                await job_tracker.retrieveData();
+                const writeOperation = (data) => [
+                    { "_code": data["_code"] },
+                    {
+                        "_code": data["_code"],
+                        "_areas": data.getAreas(),
+                        "lastUpdated": Date.now()
+                    },
+                    { upsert: true}
+                ]
+                // Add to job_tracking database
+                await db.addToCollection("job_tracking", job_tracker, writeOperation);
+            }
+            // Career exists
+            else {
                 console.log("Occupation: " + this._code + " exists in database already.");
                 let obj = existingCareer[0];
-                let o = {
-                    _technical_skills: obj._technical_skills,
-                    _title: obj._title,
-                    _salary: obj._salary,
-                    _tasks: obj._tasks,
-                    _description: obj._description,
-                    _video: obj._video,
-                    _education: obj._education,
-                    _growth: obj._growth,
-                    _related_programs: obj_related_programs
+                if(obj.hasOwnProperty("lastUpdated")) {
+                    delete obj["lastUpdated"];
                 }
-                Object.assign(this, o);
+                // Create Career object out of database data
+                Object.assign(this, obj);
             }
         } catch(error) {
             console.log(error.message);
@@ -112,11 +149,12 @@ class Career {
     }
 
     /**
-     * @name validateCareer
-     * @function
-     * 
      * Checks all Career object properties for empty Arrays, Objects, and
      * null and undefined values.
+     * 
+     * @async
+     * 
+     * @return {boolean} Boolean indicating whether object is complete
      */
     async validateCareer() {
         return Object.keys(this).every(key => {
@@ -133,26 +171,18 @@ class Career {
     }
 
     /**
-     * 
-     * @param {Object} program 
-     */
-    addRelatedProgram(program) {
-        if(this._related_programs.map(p => p.title).indexOf(program.title) === -1) {
-            this._related_programs.push(program);
-        } else {
-            console.log(program.title + " is already in related programs array.");
-        }
-    }
-
-    /**
-     * @name buildSalary
+     * Builds an object containing national, state, and local salary data for Career.
      * 
      * @private
-     * @param {Object} wages 
+     * @param {object} wages {@link https://api.careeronestop.org/api-explorer/home/index/Occupations_GetOccupationDetails|CareerOneStop API Wage JSON object}
+     * 
+     * @return {object} Salary object with national, state, and local breakdown.
      */
     _buildSalary(wages) {
+        // Based off CareerOneStop API JSON reponse structure
         let keys = ['NationalWagesList', 'StateWagesList', 'BLSAreaWagesList'];
         let percentiles = ['Pct10', 'Pct25', 'Median', 'Pct75', 'Pct90'];
+
         let salary = Object.keys(wages)
         .filter(key => keys.includes(key))
         .reduce((obj, key) => {
@@ -173,10 +203,12 @@ class Career {
     }
 
     /**
-     * @name buildTasks
+     * Builds an array of tasks associated with an O*NET Occupation.
      * 
      * @private
-     * @param {Array} tasks 
+     * @param {Array} tasks {@link https://api.careeronestop.org/api-explorer/home/index/Occupations_GetOccupationDetails|CareerOneStop API Tasks JSON object}
+     * 
+     * @return {Array} Task descriptions.
      */
     _buildTasks(tasks) {
         let t = tasks.map(task => {

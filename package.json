@@ -19,6 +19,7 @@
     "express": "^4.17.1",
     "fast-csv": "^3.1.0",
     "mongodb": "^3.3.0-beta2",
+    "ora": "^3.4.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.4"
   },

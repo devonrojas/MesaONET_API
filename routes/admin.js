@@ -24,6 +24,7 @@ const Router = express.Router();
 const db = require("../services/DatabaseService.js");
 const JobTracker = require("../models/JobTracker.js");
 const AcademicProgram = require("../models/AcademicProgram.js");
+const Throttler = require("../models/Throttler.js");
 const DataExportService = require("../services/DataExportService.js");
 const Utils = require("../helpers/utils.js");
 
@@ -33,27 +34,48 @@ const Utils = require("../helpers/utils.js");
  * @memberof module:routes/admin~adminRouter
  */
 Router.get("/test", async(req, res) => {
+    let j = new JobTracker("15-1134.00", {zip: "94123"});
+    await j.retrieveData();
     res.status(200).send("Request received. Pulling data...");
 
-    let careers = await db.queryCollection("careers", {});
-    if(careers.length > 0) {
-        await Utils.asyncForEach(careers, async(career, index) => {
-            console.log("[" + (index + 1) + "/" + careers.length + "] Retrieving data for " + career._title + "...");
-            let j = new JobTracker(career._code, {zip: "92025"});
-            await j.retrieveData();
+    // let careers = await db.queryCollection("careers", {});
+    // if(careers.length > 0) {
+    //     await Utils.asyncForEach(careers, async(career, index) => {
+    //         console.log("[" + (index + 1) + "/" + careers.length + "] Retrieving data for " + career._title + "...");
+    //         let j = new JobTracker(career._code, {zip: "92025"});
+    //         await j.retrieveData();
 
-            const writeOperation = (data) => [
-                { "_code": data["_code"] },
-                {
-                    "_code": data["_code"],
-                    "_areas": data.getAreas(),
-                    "lastUpdated": Date.now()
-                },
-                { upsert: true}
-            ]
-            await db.addToCollection("job_tracking", j, writeOperation)
-        })
-        console.log("\nAll careers have been retrieved.")
+    //         const writeOperation = (data) => [
+    //             { "_code": data["_code"] },
+    //             {
+    //                 "_code": data["_code"],
+    //                 "_areas": data.getAreas(),
+    //                 "lastUpdated": Date.now()
+    //             },
+    //             { upsert: true}
+    //         ]
+    //         await db.addToCollection("job_tracking", j, writeOperation)
+    //     })
+    //     console.log("\nAll careers have been retrieved.")
+    // }
+})
+
+Router.get("/update-job-tracking", async(req, res) => {
+    try {
+        res.status(200).send("Request received. Checking if job tracking data needs updating. Review server logs for details.");
+        let careers = await db.queryCollection("job_tracking", {});
+        if(careers.length > 0) {
+            careers = careers.map(career => career._code);
+            let operations = await new Throttler(careers, 1, 1000).execute();
+            console.log("Job Tracking data updated. Total careers: " + operations.length);
+        }
+    } catch(error) {
+        console.error(error.message);
+        // if(error.statusCode) {
+        //     res.status(error.statusCode).send(error.message);
+        // } else {
+        //     res.status(500).send(error.message);
+        // }
     }
 })
 
