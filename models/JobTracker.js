@@ -103,7 +103,7 @@ class JobTracker {
                 }
                 // Update any data in area if necessary
                 await area.update(this._code);
-
+                this._areas.push(area);
                 // Update database document with new data
                 const writeOperation = (data) => [
                     {"_code": data["code"], "_areas.area.short_name": areaSearch },
@@ -125,6 +125,8 @@ class JobTracker {
      */
     async _getLocations() {
         let location = await GoogleMapsService.findLocation(this._location);
+
+        this._location = location[0].short_name;
 
         let locations;
         let data = await db.queryCollection("job_tracking", {"_code": this._code});

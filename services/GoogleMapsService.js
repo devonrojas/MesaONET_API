@@ -55,7 +55,6 @@ const getCounty = async(location) => {
     });
     if(res1.length == 0) {
         console.log("No county data available for " + location);
-        console.log(res);
         return false;
     }
     return res1[0];
