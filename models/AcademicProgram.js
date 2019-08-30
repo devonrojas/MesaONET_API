@@ -96,7 +96,7 @@ class AcademicProgram {
                 // Run through all careers in program to check for updates
                 await Utils.asyncForEach(this._careers, async(career, index) => {
                     console.log("[" + (index + 1) + "/" + existingProgram[0]._careers.length + "] " + "Checking " + career._code + " | " + career._title + "...\r");
-                    let career = await db.queryCollection("careers", {"_code": career._code});
+                    career = await db.queryCollection("careers", {"_code": career._code});
                     let c = Object.assign(new Career(), career);
                     await c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
                     await c.saveToDatabase();
