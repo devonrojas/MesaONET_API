@@ -215,9 +215,7 @@ const updateMany = async(collectionName, query) => {
     console.log("Database connection closed.")
 }
 
-/**
- * @deprecated
- * 
+/** 
  * @name cleanCollections
  * @function
  * 
