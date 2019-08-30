@@ -106,7 +106,8 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                 .filter(item => item.area.short_name === loc)
                 .map(item => {
                     item.data = item.data
-                        .filter(el => el._radius == radius);
+                        .filter(el => el._radius == radius)
+                        .map(el => el.data)[0];
                     return item;
                 });
             } else {
@@ -116,6 +117,7 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
             }
 
             career["_job_data"] = jobData[0];
+            console.log(jobData[0])
             console.log("Career retrieval complete.");
             res.status(200).send(career);
         } else
