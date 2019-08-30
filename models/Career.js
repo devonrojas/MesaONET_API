@@ -76,6 +76,7 @@ class Career {
     addRelatedProgram(program) {
         if(this._related_programs.map(p => p.title).indexOf(program.title) === -1) {
             this._related_programs.push(program);
+            await this.saveToDatabase();
         } else {
             console.log(program.title + " is already in related programs array.");
         }
