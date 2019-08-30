@@ -10,7 +10,7 @@
  * @requires services/DataExportService
  * @requires models/JobTracker
  * @requires models/Throttler
- * @requires helper/Utils
+ * @requires helpers/Utils
  */
 
 require("dotenv").config();
@@ -115,19 +115,12 @@ Router.get("/build-programs", async(req, res) => {
         res.status(200).send("Request received. Check server logs for details. Note: This operation may take a long time.");
         let programs = ACADEMIC_PROGRAMS;
         if(programs.length > 0) {
-            let start = Date.now();
-
             let fn = async(cb, program) => {
                 let p = new AcademicProgram(program.title, program.degree_types);
                 await p.retrieveAcademicProgramData();
                 cb();
             };
-
             await new Throttler(programs, 1, 1000).execute(fn);
-
-            let duration = (Date.now() - start) / 1000;
-            duration = duration > 60 ? (duration / 60) + " seconds" : duration + " minutes";
-            console.log("Operation complete. Elapsed time: " + duration);
         }
 
     } catch(error) {

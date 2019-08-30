@@ -78,7 +78,14 @@ class AcademicProgram {
                     // Append career to careers array
                     let valid = await c.validateCareer();
                     if(valid) {
-                        this._careers.push(c)
+                        // Only save career growth and salary info in program data
+                        let obj = {
+                            _code: c._code,
+                            _title: c._title,
+                            _growth: c._growth,
+                            _salary: c._salary["NationalWagesList"]
+                        }
+                        this._careers.push(obj)
                     };
                 })
             } else {
@@ -91,19 +98,16 @@ class AcademicProgram {
                     console.log("[" + (index + 1) + "/" + existingProgram[0]._careers.length + "] " + "Checking " + career._code + " | " + career._title + "...\r");
                     let c = Object.assign(new Career(), career);
                     c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
-                    // Update career in program object
-                    this._careers[index] = c;
-                    // console.log(this._careers[index]);
 
-                    let writeOp = (career) => {
-                        return [
-                            {_code: career['_code'] },
-                            Object.assign({}, {...career, lastUpdated: Date.now()}),
-                            { upsert: true }
-                        ]
+                    let obj = {
+                        _code: c._code,
+                        _title: c._title,
+                        _growth: c._growth,
+                        _salary: c._salary["NationalWagesList"]
                     }
-                    // Update career in database
-                    await db.addToCollection("careers", this._careers[index], writeOp);
+
+                    // Update career in program object
+                    this._careers[index] = obj;
                 })
                 console.log();
             }
@@ -139,11 +143,9 @@ class AcademicProgram {
         try {
             let temp = [];
             // Map all careers to just national salary data and push each salary object into _aggregate_salary array.
-            this._careers.map(career => {
-                return career._salary;
-            }).map(salary => {
-                return salary['NationalWagesList']
-            }).forEach(salary => {
+            this._careers
+            .map(career => career._salary)
+            .forEach(salary => {
                 temp.push(new Salary(...Object.values(salary[0])));
             })
             // Reduce salary objects in array to single values.

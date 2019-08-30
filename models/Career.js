@@ -112,15 +112,7 @@ class Career {
                 this._education = career_one_stop_data['EducationTraining']['EducationType'];
                 this._video = career_one_stop_data['COSVideoURL'];
 
-                // Add new career data to database
-                let writeOp = (career) => {
-                    return [
-                        { _code: career['_code'] },
-                        Object.assign({}, {...career, lastUpdated: Date.now()}),
-                        { upsert: true}
-                    ]
-                }
-                await db.addToCollection("careers", this, writeOp);
+                await this.saveToDatabase();
 
                 // Create a job tracking record for the new career
                 let job_tracker = new JobTracker(this._code);
@@ -192,6 +184,22 @@ class Career {
             }
             return true;
         })
+    }
+
+    async saveToDatabase() {
+        try {
+            // Add career data to database
+            let writeOp = (career) => {
+                return [
+                    { _code: career['_code'] },
+                    Object.assign({}, {...career, lastUpdated: Date.now()}),
+                    { upsert: true}
+                ]
+            }
+            await db.addToCollection("careers", this, writeOp);
+        } catch(error) {
+            console.error(error.message);
+        }
     }
 
     /**

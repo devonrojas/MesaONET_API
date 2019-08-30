@@ -49,8 +49,8 @@ const Utils = require("../helpers/utils.js");
  * @function
  * @memberof module:routes/program~programRouter
  * 
- * @see [DatabaseService]   {@link module:services/DatabaseService}
- * @see [Utils]             {@link module:helpers/Utils}
+ * @see {@link module:services/DatabaseService|DatabaseService}
+ * @see {@link module:helpers/Utils|Utils}
  */
 Router.post("/", async(req, res) => {
     res.setHeader("Allow-Access-Control-Origin", "*");
@@ -429,7 +429,7 @@ Router.post("/", async(req, res) => {
  * @function
  * @memberof module:routes/program~programRouter
  * 
- * @see [DatabaseService]   {@link module:services/DatabaseService}
+ * @see {@link module:services/DatabaseService|DatabaseService}
  */
 Router.get("/", async(req, res) => {
     try {
