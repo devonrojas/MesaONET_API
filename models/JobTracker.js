@@ -3,15 +3,17 @@
  * @author Devon Rojas
  * 
  * @requires services/CareerOneStopService
+ * @requires services/GoogleMapsService
  * @requires services/DatabaseService
  * @requires helpers/Utils
  */
 
 const CareerOneStopService = require("../services/CareerOneStopService.js");
 const GoogleMapsService = require("../services/GoogleMapsService.js");
-const Utils = require("../helpers/utils.js");
 const db = require("../services/DatabaseService.js");
-const FETCH_PERIOD = 30;
+const Utils = require("../helpers/utils.js");
+
+const FETCH_PERIOD = 30; // Days
 
 /**
  * Class containing logic to build job posting data for an O*NET Occupation.
@@ -19,8 +21,8 @@ const FETCH_PERIOD = 30;
 class JobTracker {
     /**
      * Creates a JobTracker object.
-     * @param {object} location 
-     * @param {string} location.zip
+     * @param {object} location                 A location object
+     * @param {string} [location.zip="92111"]   A valid US Zip code
      */
     constructor(code, location = {zip: "92111"}) {
         /** @private */
@@ -68,7 +70,6 @@ class JobTracker {
 
             // Job Tracker record doesn't exist for area in database
             if(res.length === 0) {
-                console.log("Data doesn't exist for " + areaSearch + ".");
                 // If location is a zip code, look up appropriate county
                 if(location.types.includes('postal_code')) {
                     area = new CountyArea(location);
@@ -149,8 +150,8 @@ class JobTracker {
 class PrimitiveArea {
     /**
      * Creates a job posting area.
-     * @param {object} area             Location object.
-     * @param {string} area.short_name  Name of area.
+     * @param {object} area             Location object
+     * @param {string} area.short_name  Name of area
      * @param {Array}  area.types       Area types
      */
     constructor(area) {
@@ -198,10 +199,10 @@ class PrimitiveArea {
      * Initializes a new area.
      * @async
      * 
-     * @see [CareerOneStopService] {@link modules:services/CareerOneStopService}
-     * @see [JobRecord]            {@link JobRecord}
+     * @see {@link modules:services/CareerOneStopService|CareerOneStopService}
+     * @see {@link modules:models/JobTracker~JobRecord|JobRecord}
      * 
-     * @param {string} code
+     * @param {string} code A valid O*NET Occupation code
      */
     async init(code) {
         try {
@@ -211,12 +212,11 @@ class PrimitiveArea {
         }
     }
 
-    // FIX
     /**
      * Updates area with any necessary job records.
      * @async 
      * 
-     * @param {string} code
+     * @param {string} code A valid O*NET Occupation code
      */
     async update(code) {
         try {
@@ -236,8 +236,8 @@ class PrimitiveArea {
     /**
      * Retrieves job data for area.
      * 
-     * @param {string}      code
-     * @param {number}      [radius=25]
+     * @param {string}      code        A valid O*NET Occupation code
+     * @param {number}      [radius=25] The radius around a location to search job postings in
      */
     async fetch(code, area = this.area.short_name, radius = 25) {
         try {
@@ -296,9 +296,10 @@ class CountyArea extends PrimitiveArea {
      * Creates a county job posting area. This object contains a collection of zip codes that fall
      * within the county to assist in data retrieval from the [CareerOneStop]{@link module:services/CareerOneStopService} API.
      * 
-     * @see [AreaRadius]{@link module:models/JobTracker~AreaRadius}
+     * @see {@link module:models/JobTracker~AreaRadius|AreaRadius}
      * 
-     * @param {object} location Location object.
+     * @param {object} location             Location object
+     * @param {string} location.short_name  A valid US Zip code
      */
     constructor(location) {
         super(location);
@@ -309,6 +310,10 @@ class CountyArea extends PrimitiveArea {
         this.data = [new AreaRadius(25), new AreaRadius(50), new AreaRadius(100)];
     }
 
+    /**
+     * Adds a zip code to object's zip code alias array.
+     * @param {string|number} zip  A valid US Zip code
+     */
     addZipCodeAlias(zip) {
         if(typeof zip === 'string') {
             if(isNaN(parseInt(zip))) {
@@ -331,6 +336,12 @@ class CountyArea extends PrimitiveArea {
         }
     }
 
+    /**
+     * Updates area with any necessary job records.
+     * @async 
+     * 
+     * @param {string} code A valid O*NET Occupation code
+     */
     async update(code) {
         try {
             // Test only first AreaRadius object's data
@@ -351,7 +362,9 @@ class CountyArea extends PrimitiveArea {
      * Retrieves job data for an area with different radius values.
      * @override
      * 
-     * @see [CareerOneStopService]{@link module:services/CareerOneStopService}
+     * @see {@link module:services/CareerOneStopService|CareerOneStopService}
+     * 
+     * @param {string} code A valid O*NET Occupation code
      */
     async fetch(code) {
         let index = Math.floor(Math.random() * (+this._zip_code_aliases.length));

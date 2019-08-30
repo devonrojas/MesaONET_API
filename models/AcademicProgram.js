@@ -1,4 +1,5 @@
 /**
+ * @file 
  * @module models/AcademicProgram
  * @author Devon Rojas
  * 
@@ -47,9 +48,9 @@ class AcademicProgram {
      * scanned for any related programs updates.
      * 
      * @async
-     * @see [Career]            {@link module:models/Career}
-     * @see [ONETService]       {@link module:services/ONETService}
-     * @see [DatabaseService]   {@link module:services/DatabaseService}
+     * @see {@link module:models/Career|Career}
+     * @see {@link module:services/ONETService|ONETService}
+     * @see {@link module:services/DatabaseService|DatabaseService}
      * 
      * @return {void}
      */
@@ -59,13 +60,16 @@ class AcademicProgram {
             // it instead of re-generating the program and career data.
             let existingProgram = await db.queryCollection("programs", { _title: this._title });
             if(existingProgram.length === 0) {
+                console.log("\nBuilding program: " + this._title + "\n");
+
                 // Get length of collection for next code in series
                 let docs = await db.queryCollection("programs", {});
                 this._code = docs.length + 1;
                 // Get all matching occupations for program name
                 const keyword_url = "https://services.onetcenter.org/ws/online/search?keyword=" + this._title.toLowerCase();
                 let res = await ONETService.fetch(keyword_url);
-                await Utils.asyncForEach(res, async(career) => {
+                await Utils.asyncForEach(res, async(career, index) => {
+                    console.log("[" + (index + 1) + "/" + res.length + "] " + "Checking " + career.code + " | " + career.title + "...\r");
                     // Build Career objects for all valid O*NET Codes
                     let c = new Career(career.code);
                     await c.retrieveCareerData();
@@ -84,7 +88,7 @@ class AcademicProgram {
 
                 // Run through all careers in program to check for updates
                 await Utils.asyncForEach(this._careers, async(career, index) => {
-                    console.log("[" + (index + 1) + "/" + existingProgram[0]._careers.length + "] " + "Checking " + career._code + " | " + career._title + "...");
+                    console.log("[" + (index + 1) + "/" + existingProgram[0]._careers.length + "] " + "Checking " + career._code + " | " + career._title + "...\r");
                     let c = Object.assign(new Career(), career);
                     c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
                     // Update career in program object
@@ -101,6 +105,7 @@ class AcademicProgram {
                     // Update career in database
                     await db.addToCollection("careers", this._careers[index], writeOp);
                 })
+                console.log();
             }
 
             // Aggregate salary and growth data from careers
@@ -132,17 +137,22 @@ class AcademicProgram {
      */
     async _aggregateData() {
         try {
+            let temp = [];
             // Map all careers to just national salary data and push each salary object into _aggregate_salary array.
-            this._careers.map(career => career._salary).map(salary => salary['NationalWagesList']).forEach(salary => {
-                this._aggregate_salary.push(new Salary(...Object.values(salary[0])));
+            this._careers.map(career => {
+                return career._salary;
+            }).map(salary => {
+                return salary['NationalWagesList']
+            }).forEach(salary => {
+                temp.push(new Salary(...Object.values(salary[0])));
             })
             // Reduce salary objects in array to single values.
-            let o = this._aggregate_salary.reduce((obj, item) => {
-                obj.Pct10 += item.Pct10,
-                obj.Pct25 += item.Pct25,
-                obj.Median += item.Median,
-                obj.Pct75 += item.Pct75,
-                obj.Pct90 += item.Pct90
+            let o = temp.reduce((obj, item) => {
+                obj.Pct10 += item.getPct10(),
+                obj.Pct25 += item.getPct25(),
+                obj.Median += item.getMedian(),
+                obj.Pct75 += item.getPct75(),
+                obj.Pct90 += item.getPct90()
                 return obj;
             }, {Pct10: 0, Pct25: 0, Median: 0, Pct75: 0, Pct90: 0});
             // Average the salary data using the length of the _careers array
@@ -162,7 +172,7 @@ class AcademicProgram {
             // Average the growth using the length of the _careers array
             this._aggregate_growth /= this._careers.length;
         } catch(error) {
-            console.error(error.message);
+            console.error(error);
         }
     }
 
@@ -173,7 +183,7 @@ class AcademicProgram {
      * 
      * @async
      * @private
-     * @see [DatabaseService] {@link modules:services/DatabaseService}
+     * @see {@link modules:services/DatabaseService|DatabaseService}
      * 
      * @return {void}
      */

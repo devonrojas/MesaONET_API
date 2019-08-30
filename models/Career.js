@@ -48,7 +48,7 @@ class Career {
 
     /**
      * Sets the career's related programs.
-     * @param arr 
+     * @param arr An array of related programs.
      */
     setRelatedPrograms(arr) {
         if(Array.isArray(arr)) {
@@ -68,7 +68,10 @@ class Career {
 
     /**
      * Adds a program to the object's related_programs array.
-     * @param {Object} program 
+     * @param {Object}  program      A related program object
+     * @param {string}  title        Program title
+     * @param {Array}   degree_types An array of degrees associated with a program
+     * @param {string}  parth        A URL path pointing to a Mesa Academic Program page
      */
     addRelatedProgram(program) {
         if(this._related_programs.map(p => p.title).indexOf(program.title) === -1) {
@@ -97,7 +100,8 @@ class Career {
 
             // Career doesn't exist
             if(existingCareer.length === 0) {
-                let career_one_stop_data = await CareerOneStopService.fetch(this._code, '92111');
+                // Get national career data
+                let career_one_stop_data = await CareerOneStopService.fetch(this._code);
 
                 this._technical_skills = await ONETService.getCareerTechnicalSkills(this._code);
                 this._growth = +(await db.queryCollection("growth_data", {soc_code: this._code.slice(0, this._code.indexOf("."))}))[0]['growth_pct'];
@@ -144,7 +148,7 @@ class Career {
                 Object.assign(this, obj);
             }
         } catch(error) {
-            console.log(error.message);
+            console.log("here", error.message);
         }
     }
 
@@ -157,14 +161,34 @@ class Career {
      * @return {boolean} Boolean indicating whether object is complete
      */
     async validateCareer() {
+        const keys_to_validate = [
+            "_code", 
+            "_related_programs", 
+            "_technical_skills", 
+            "_growth", 
+            "_tasks", 
+            "_salary", 
+            "_title", 
+            "_description", 
+            "_education", 
+            "_video"
+        ];
+
+        Object.keys(this).forEach(key => {
+
+        }) 
         return Object.keys(this).every(key => {
             if(!this[key]) {
                 return false;
             } else {
+                if(!keys_to_validate.includes(key)) {
+                    return false;
+                } else {
                 // console.log(key);
-                if(Array.isArray(this[key])) {
-                    if(this[key].length === 0) return false;
-                } else if(Object.entries(this).length === 0 && this.constructor === Object) return false;
+                    if(Array.isArray(this[key])) {
+                        if(this[key].length === 0) return false;
+                    } else if(Object.entries(this).length === 0 && this.constructor === Object) return false;
+                };
             }
             return true;
         })

@@ -82,34 +82,28 @@ class Utils {
      * @param {Array}   calls           Array of calls to execute
      * @param {number}  rateLimitCount  Amount of calls to make sychronously
      * @param {number}  rateLimitTime   Amount of time to wait between batches
+     * 
+     * @return {Array}  Reponse data from all calls.
      */
     static async throttle(calls, rateLimitCount, rateLimitTime) {
         const totalCalls = calls.length;
         console.log(`Total calls: ${totalCalls}`);
         let p = [];
         while(calls.length > 0) {
-            var twirlTimer = (function() {
-                var P = ["\\", "|", "/", "-"];
-                var x = 0;
-                return setInterval(function() {
-                  process.stdout.write("\r" + P[x++] + " Calls left to execute: " + calls.length + "...");
-                  x &= 3;
-                }, 250);
-              })();
-
+            // Take a call chunk specified by rateLimitCount
             let callstoExecute = calls.slice(0, rateLimitCount);
+            // Remove that chunk from original call array
             calls = calls.slice(rateLimitCount, calls.length);
     
             let promises = [];
             callstoExecute.forEach((call) => promises.push(new Promise((resolve, reject) => call(resolve))));
     
+            // Execute all promises in call chunk
             let res = await Promise.all(promises);
+            // Combine response with any previous response data
             p = p.concat(res);
+            // Wait for rateLimitTime to pass before moving on to next call chunk
             await Utils.timeout(rateLimitTime);
-
-            // Return stdout to beginning of line
-            clearInterval(twirlTimer);
-            process.stdout.write("\r");
         }
         return p;
     }

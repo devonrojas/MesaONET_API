@@ -1,4 +1,6 @@
 /**
+ * @file Handles /admin route requests.
+ * 
  * @module routes/admin
  * @author Devon Rojas
  * 
@@ -6,7 +8,8 @@
  * 
  * @requires services/DatabaseService
  * @requires services/DataExportService
- * @requires models/AcademicProgram
+ * @requires models/JobTracker
+ * @requires models/Throttler
  * @requires helper/Utils
  */
 
@@ -23,65 +26,127 @@ const Router = express.Router();
 // Module imports
 const db = require("../services/DatabaseService.js");
 const JobTracker = require("../models/JobTracker.js");
-const AcademicProgram = require("../models/AcademicProgram.js");
 const Throttler = require("../models/Throttler.js");
+const AcademicProgram = require("../models/AcademicProgram.js");
 const DataExportService = require("../services/DataExportService.js");
 const Utils = require("../helpers/utils.js");
 
+const ACADEMIC_PROGRAMS = require('../misc/mesa_academic_programs_new.json');
+
 /**
- * @name GET/
- * @function
- * @memberof module:routes/admin~adminRouter
+ * FOR TESTING PURPOSES ONLY
  */
 Router.get("/test", async(req, res) => {
-    let j = new JobTracker("15-1134.00", {zip: "94123"});
-    await j.retrieveData();
-    res.status(200).send("Request received. Pulling data...");
-
-    // let careers = await db.queryCollection("careers", {});
-    // if(careers.length > 0) {
-    //     await Utils.asyncForEach(careers, async(career, index) => {
-    //         console.log("[" + (index + 1) + "/" + careers.length + "] Retrieving data for " + career._title + "...");
-    //         let j = new JobTracker(career._code, {zip: "92025"});
-    //         await j.retrieveData();
-
-    //         const writeOperation = (data) => [
-    //             { "_code": data["_code"] },
-    //             {
-    //                 "_code": data["_code"],
-    //                 "_areas": data.getAreas(),
-    //                 "lastUpdated": Date.now()
-    //             },
-    //             { upsert: true}
-    //         ]
-    //         await db.addToCollection("job_tracking", j, writeOperation)
-    //     })
-    //     console.log("\nAll careers have been retrieved.")
-    // }
-})
-
-Router.get("/update-job-tracking", async(req, res) => {
     try {
-        res.status(200).send("Request received. Checking if job tracking data needs updating. Review server logs for details.");
-        let careers = await db.queryCollection("job_tracking", {});
-        if(careers.length > 0) {
-            careers = careers.map(career => career._code);
-            let operations = await new Throttler(careers, 1, 1000).execute();
-            console.log("Job Tracking data updated. Total careers: " + operations.length);
-        }
-    } catch(error) {
-        console.error(error.message);
-        // if(error.statusCode) {
-        //     res.status(error.statusCode).send(error.message);
-        // } else {
-        //     res.status(500).send(error.message);
-        // }
+        res.sendStatus(200);
+
+        let careers = await db.queryCollection("careers", {});
+        let job = await db.queryCollection("job_tracking", {});
+
+        careers = careers.map(career => career._code);
+        job = job.map(item => item._code);
+
+        careers.forEach(career => {
+            if(!job.includes(career)) {
+                console.log(career);
+            }
+        })
+        console.log("done");
+    } catch (error) {
+        console.error(error);
     }
 })
 
 /**
- * Pulls new program and occupation data.
+ * Runs a program to update all job tracking information in database if necessary.
  * 
+ * @name GET/update-job-tracking
+ * @function
+ * @memberof module:routes/admin~adminRouter
+ * 
+ * @see {@link module:services/DatabaseService|DatabaseService}
+ * @see {@link module:models/Throttler|Throttler}
+ */
+Router.get("/update-job-tracking", async(req, res) => {
+    try {
+        res.status(200).send("Request received. Review server logs for details. Note: This operation may take a long time.");
+
+        // Pull all careers from collection
+        let careers = await db.queryCollection("job_tracking", {});
+        if(careers.length > 0) {
+            // Get all career codes
+            careers = careers.map(career => career._code);
+
+            const RATE_LIMIT = 5;
+            const RATE_LIMIT_TIME = 1000;
+
+            // Cycle through each career and update info if necessary.
+            let operations = await new Throttler(careers, RATE_LIMIT, RATE_LIMIT_TIME).execute();
+
+            console.log("Job Tracking data updated. Total careers: " + operations.length);
+        }
+    } catch(error) {
+        console.error(error.message);
+
+        if(res.headersSent) {
+            if(error.statusCode) {
+                res.status(error.statusCode).send(error.message);
+            } else {
+                res.status(500).send(error.message);
+            }
+        }
+    }
+})
+
+/**
+ * Builds program data out of {@link ../misc/mesa_academic_programs_new.json|Mesa Academic Programs} 
+ * and writes any new data to database. _Note_: This function requires a properly configured JSON file
+ * to execute. See current academic programs JSON file in /misc folder for example.
+ * 
+ * @name GET/build-programs
+ * @function
+ * @memberof module:routes/admin~adminRouter
+ * 
+ * @see {@link module:models/AcademicProgram|AcademicProgram}
+ * @see {@link module:models/Throttler|Throttler}
+ */
+Router.get("/build-programs", async(req, res) => {
+    try {
+        res.status(200).send("Request received. Check server logs for details. Note: This operation may take a long time.");
+        let programs = ACADEMIC_PROGRAMS;
+        if(programs.length > 0) {
+            let start = Date.now();
+
+            let fn = async(cb, program) => {
+                let p = new AcademicProgram(program.title, program.degree_types);
+                await p.retrieveAcademicProgramData();
+                cb();
+            };
+
+            await new Throttler(programs, 1, 1000).execute(fn);
+
+            let duration = (Date.now() - start) / 1000;
+            duration = duration > 60 ? (duration / 60) + " seconds" : duration + " minutes";
+            console.log("Operation complete. Elapsed time: " + duration);
+        }
+
+    } catch(error) {
+        console.error(error);
+
+        if(!res.headersSent) {
+            if(error.statusCode) {
+                res.status(error.statusCode).send(error.message);
+            } else {
+                res.status(500).send(error.message);
+            }
+        }
+    }
+})
+
+/**
+ * @deprecated Use {@link module:routes/program|/program routes} or {@link module:routes/career|/career routes} instead.
+ * 
+ * Pulls new program and occupation data.
  * @name GET/generate
  * @function
  * @memberof module:routes/admin~adminRouter
@@ -209,7 +274,7 @@ Router.get("/generate", async (req, res) => {
 });
 
 /**
- * @deprecated
+ * @deprecated Data has already been exported to MongoDB Database.
  * 
  * Writes all careers within academic programs to database.
  * @name GET/export-careers
@@ -298,7 +363,7 @@ Router.get("/export-careers", async (req, res) => {
 });
 
 /**
- * @deprecated
+ * @deprecated Data has already been exported to MongoDB Database.
  * 
  * Writes all academic programs from JSON file to database.
  * @name GET/export-programs

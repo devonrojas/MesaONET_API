@@ -20,6 +20,8 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const bodyParser = require("body-parser");
+const bcrypt = require("bcrypt");
+const db = require("./services/DatabaseService.js");
 
 // Express Routers
 const programRoutes = require("./routes/program.js");
@@ -119,7 +121,80 @@ app.get("/", (req, res) => {
  */
 app.use("/docs", express.static("out"));
 
-/**
- * Instantiates Express application on specified PORT
- */
-app.listen(PORT, () => console.log(`App running on port: ${PORT}.`));
+// ADMINISTRATIVE ENDPOINTS
+app.post("/password", async(req, res) => {
+    try {
+        res.status(201).send("Processing...");
+        await bcrypt.hash(req.body.password, 10, async(err, hash) => {
+            req.body.password = hash;
+            const writeOp = (user) => {
+                return [
+                    {"username": user.username},
+                    user,
+                    {upsert: true}
+                ]
+            }
+            await db.addToCollection("auth_users", req.body, writeOp);
+            console.log("completed");
+        })
+    } catch(error) {
+        console.error(error);
+    }
+})
+app.post("/kill", async(req, res) =>{
+    if(req.body && req.body.password && req.body.username) {
+        let hash = await db.queryCollection("auth_users", {"username": req.body.username});
+        if(hash.length > 0) {
+            hash = hash[0].password;
+
+            await bcrypt.compare(req.body.password, hash, (err, success) => {
+                if(success) {
+                    res.status(201).send("SUCCESS. SHUTTING DOWN SERVER...");
+                    shutDown();
+                } else {
+                    res.status(404).send("SERVER SHUTDOWN FAILED.");
+                }
+            })
+        } else {
+            res.status(404).send("SERVER SHUTDOWN FAILED.");
+        }
+    } else {
+        res.status(404).send("WARNING: YOU ARE ATTEMPTING TO KILL THE SERVER. PLEASE RESEND REQUEST WITH THE PROPER PAYLOAD TO EXECUTE SERVER SHUTDOWN.");
+    }
+})
+
+// Instantiates Express application on specified PORT
+const server = app.listen(PORT, () => console.log(`App running on port: ${PORT}.`));
+
+let connections = [];
+
+const shutDown = () => {
+    const skull = "\n                 uuuuuuu\n             uu$$$$$$$$$$$uu\n          uu$$$$$$$$$$$$$$$$$uu\n         u$$$$$$$$$$$$$$$$$$$$$u\n        u$$$$$$$$$$$$$$$$$$$$$$$u\n       u$$$$$$$$$$$$$$$$$$$$$$$$$u\n       u$$$$$$$$$$$$$$$$$$$$$$$$$u\n       u$$$$$$\"   \"$$$\"   \"$$$$$$u\n       \"$$$$\"      u$u       $$$$\"\n        $$$u       u$u       u$$$\n        $$$u      u$$$u      u$$$\n         \"$$$$uu$$$   $$$uu$$$$\"\n          \"$$$$$$$\"   \"$$$$$$$\"\n            u$$$$$$$u$$$$$$$u\n             u$\"$\"$\"$\"$\"$\"$u\n  uuu        $$u$ $ $ $ $u$$       uuu\n u$$$$        $$$$$u$u$u$$$       u$$$$\n  $$$$$uu      \"$$$$$$$$$\"     uu$$$$$$\nu$$$$$$$$$$$uu    \"\"\"\"\"    uuuu$$$$$$$$$$\n$$$$\"\"\"$$$$$$$$$$uuu   uu$$$$$$$$$\"\"\"$$$\"\n \"\"\"      \"\"$$$$$$$$$$$uu \"\"$\"\"\"\n           uuuu \"\"$$$$$$$$$$uuu\n  u$$$uuu$$$$$$$$$uu \"\"$$$$$$$$$$$uuu$$$\n  $$$$$$$$$$\"\"\"\"           \"\"$$$$$$$$$$$\"\n   \"$$$$$\"                      \"\"$$$$\"\"\n     $$$\"                         $$$$\"\n";
+    let indentedSkull = "";
+    skull.split("\n").forEach(line => {
+        indentedSkull += "\t" + line + "\n";
+    })
+    console.log(indentedSkull);
+    console.log("Received kill signal, attempting to shut down gracefully...");
+
+    server.close(() => {
+        console.log("Closed out remaining connections");
+        process.exit(0);
+    })
+
+    setTimeout(() => {
+        console.log("Could not close connections in time, forcefully shutting down!");
+        process.exit(1);
+    }, 1000 * 10);
+
+    connections.forEach(curr => curr.end());
+    setTimeout(() => connections.forEach(curr => curr.destroy()), 5000);
+}
+
+process.on("SIGTERM", shutDown);
+process.on("SIGINT", shutDown);
+
+server.on('connection', connection => {
+    connections.push(connection);
+    connection.on('close', () => connections = connections.filter(curr => curr !== connection));
+})
