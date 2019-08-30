@@ -75,7 +75,7 @@ app.use(cors(corsOptions));
 app.use(logger);
 
 app.use((req, res, next) => {
-    res.setHeader('Access-Controll-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', '*');
     next();
 })
 
