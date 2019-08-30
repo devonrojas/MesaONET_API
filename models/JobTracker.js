@@ -310,7 +310,7 @@ class CountyArea extends PrimitiveArea {
         /** @private */
         this._zip_code_aliases = [location.short_name];
 
-        this.data = [new AreaRadius(25), new AreaRadius(50), new AreaRadius(100)];
+        this.data = [new AreaRadius(25), new AreaRadius(50), new AreaRadius(75), new AreaRadius(100)];
     }
 
     /**
