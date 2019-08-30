@@ -79,6 +79,8 @@ const fetchJobDetail = async(code, location = {short_name: "US", types: ["countr
                     loc = GoogleMapsService.getState(location.short_name);
                 } else if(location.types.includes("administrative_area_level_1")) {
                     loc = {short_name: "US", types: ["country", "political"]}
+                } else {
+                    loc = location
                 }
                 console.log("No data found for " + location.short_name + ". Trying " + loc.short_name + "...");
                 return fetchJobDetail(code, location, radius, days, 1);
