@@ -123,6 +123,9 @@ Router.get("/build-programs", async(req, res) => {
             await new Throttler(programs, 1, 1000).execute(fn);
         }
 
+        // Clean careers and job-tracking data
+        await db.cleanCollections();
+
     } catch(error) {
         console.error(error);
 

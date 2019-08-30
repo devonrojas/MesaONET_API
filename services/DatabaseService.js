@@ -196,7 +196,7 @@ const deleteMany = async(collectionName, query) => {
  * @function
  * 
  * @param {string}      collectionName  Collection in database to update documents in.
- * @param {...Object}   query           One or more query conditions to specify update operation.
+ * @param {Object}      query           One or more query conditions to specify update operation.
  * 
  * @return {void}
  */
@@ -229,44 +229,32 @@ const cleanCollections = async() => {
             console.error(err);
         } else {
             let DB = client.db("heroku_zss53kwl");
-            let collection = DB.collection("academic_programs");
-            let docs = await collection.find().toArray();
 
-            // Get all valid codes associated with all academic programs
-            let validCodes = [...new Set(
-                [].concat
-                .apply([], docs
-                    .map(program => program.careers
-                        .map(career => career.code))
-                    .sort())
-            )];
-            
-            // Scan careers collection for incomplete careers
-            collection = DB.collection("careers");
-            let toDelete = await collection.find({code: {$nin: validCodes}}).toArray();
-            if(toDelete.length > 0) {
-                console.log("The following codes will be deleted from 'careers':");
-                toDelete.forEach(item => {
-                    console.log("\t" + item.code)
+            let careersCollection = DB.collection("careers");
+            let jobTrackingCollection = DB.collection("job_tracking");
+
+            let careers = await careersCollection.find().toArray();
+            let jobTracking = await jobTrackingCollection.find().toArray();
+
+            careers = careers.map(career => career._code);
+            jobTracking = jobTracking.map(career => career._code);
+
+            console.log("Cleaning careers and job_tracking collections for missing data...");
+
+            if(careers.length > jobTracking.length) {
+                careers.forEach(async(code) => {
+                    if(!jobTracking.includes(code)) {
+                        await careersCollection.deleteOne({"_code": code});
+                        console.log("Deleted " + code + " from careers collection.");
+                    }
                 })
-            }
-            let res = await collection.deleteMany({ code: {$nin: validCodes}});
-            if(res.result.n > 0) {
-                console.log("Successfully deleted " + res.result.n + "documents.");
-            }
-
-            // Scan job_tracking collection for incomplete careers
-            collection = DB.collection("job_tracking");
-            toDelete = await collection.find({careercode: {$nin: validCodes}}).toArray();
-            if(toDelete.length > 0) {
-                console.log("The following codes will be deleted from 'job_tracking':");
-                toDelete.forEach(item => {
-                    console.log("\t" + item.careercode)
-                })   
-            }         
-            res = await collection.deleteMany({careercode: {$nin: validCodes}})
-            if(res.result.n > 0) {
-                console.log("Successfully deleted " + res.result.n + "documents.");
+            } else if(jobTracking.length > careers.length) {
+                jobTracking.forEach(async(code) => {
+                    if(!careers.includes(code)) {
+                        await jobTrackingCollection.deleteOne({"_code": code});
+                        console.log("Deleted " + code + " from job_tracking collection.");
+                    }
+                })
             }
 
             client.close();
