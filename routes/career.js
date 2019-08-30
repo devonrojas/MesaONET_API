@@ -23,6 +23,7 @@ const Router = express.Router();
 // Module imports
 const db = require("../services/DatabaseService.js");
 const GoogleMapsService = require("../services/GoogleMapsService.js");
+const JobTracker = require("../models/JobTracker.js");
 
 /**
  * Retrieves all [Careers]{@link module:models/Career} in database.
@@ -96,7 +97,9 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
             console.log("Career found!");
             career = career[0];
     
-            let jobData = (await db.queryCollection("job_tracking", {"_code": code}))[0]._areas; // Query database with career code & area
+            let jobData = await db.queryCollection("job_tracking", {"_code": code}); // Query database with career code & area
+
+            jobData = jobData[0]._areas;
 
             let loc = await GoogleMapsService.getCounty(location);
             
@@ -116,8 +119,26 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                 .filter(item => item.area.short_name === loc);
             }
 
+            // If no data exists for requested location, pull data
+            if(jobData.length === 0) {
+                console.log("No job data exists for " + loc + ".");
+                let j = new JobTracker(code, loc);
+                await j.retrieveData();
+                jobData = j.getAreas()
+                .filter(item => item.area.short_name === j._location);
+
+                // Necessary map for county locations
+                if(jobData[0].area.types.includes("postal_code") || jobData[0].area.types.includes("administrative_area_level_2")) {
+                    jobData = jobData
+                    .map(item => {
+                        item.data = item.data
+                            .filter(el => el._radius == radius)
+                            .map(el => el.data)[0];
+                    })
+                }
+            }
+
             career["_job_data"] = jobData[0];
-            console.log(jobData[0])
             console.log("Career retrieval complete.");
             res.status(200).send(career);
         } else

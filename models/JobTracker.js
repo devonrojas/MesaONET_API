@@ -21,10 +21,9 @@ const FETCH_PERIOD = 30; // Days
 class JobTracker {
     /**
      * Creates a JobTracker object.
-     * @param {object} location                 A location object
-     * @param {string} [location.zip="92111"]   A valid US Zip code
+     * @param {string} location   A location (Zip code, city, or state)
      */
-    constructor(code, location = {zip: "92111"}) {
+    constructor(code, location="92111") {
         /** @private */
         this._code = code;
         /** @private */
@@ -125,7 +124,7 @@ class JobTracker {
      * @see {@link module:services/DatabaseService|DatabaseService}
      */
     async _getLocations() {
-        let location = await GoogleMapsService.findLocation(this._location.zip);
+        let location = await GoogleMapsService.findLocation(this._location);
 
         let locations;
         let data = await db.queryCollection("job_tracking", {"_code": this._code});
@@ -239,7 +238,7 @@ class PrimitiveArea {
      * @param {string}      code        A valid O*NET Occupation code
      * @param {number}      [radius=25] The radius around a location to search job postings in
      */
-    async fetch(code, area = this.area.short_name, radius = 25) {
+    async fetch(code, area = this.area, radius = 25) {
         try {
             let record = new JobRecord();
             

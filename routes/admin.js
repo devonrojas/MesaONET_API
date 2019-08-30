@@ -80,8 +80,14 @@ Router.get("/update-job-tracking", async(req, res) => {
             const RATE_LIMIT = 5;
             const RATE_LIMIT_TIME = 1000;
 
+            let fn = async(cb, career) => {
+                let j = new JobTracker(career);
+                await j.retrieveData();
+                cb();
+            };
+
             // Cycle through each career and update info if necessary.
-            let operations = await new Throttler(careers, RATE_LIMIT, RATE_LIMIT_TIME).execute();
+            let operations = await new Throttler(careers, RATE_LIMIT, RATE_LIMIT_TIME).execute(fn);
 
             console.log("Job Tracking data updated. Total careers: " + operations.length);
         }

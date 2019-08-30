@@ -43,9 +43,36 @@ const getCounty = async(location) => {
     let res = await _fetch(location);
     let res1 = res
     .map(item => {return { short_name: item.short_name, types: item.types }})
-    .filter(item => item.types.includes("administrative_area_level_2"));
+    .filter(item => {
+        if(item.types.includes("administrative_area_level_2")) {
+            return true;
+        } else {
+            if(item.types.includes("administrative_area_level_1") && !item.types.includes("administrative_area_level_2")) {
+                return true;
+            }
+        }
+        return false;
+    });
     if(res1.length == 0) {
         console.log("No county data available for " + location);
+        console.log(res);
+        return false;
+    }
+    return res1[0];
+}
+
+const getState = async(location) => {
+    let res = await _fetch(location);
+    let res1 = res
+    .map(item => {return { short_name: item.short_name, types: item.types }})
+    .filter(item => {
+        if(item.types.includes("administrative_area_level_1")) {
+            return true;
+        }
+        return false;
+    });
+    if(res1.length == 0) {
+        console.log("No state data available for " + location);
         return false;
     }
     return res1[0];
@@ -70,4 +97,4 @@ const _fetch = async(location) => {
     return res;
 }
 
-module.exports = { findLocation, getCounty }
+module.exports = { findLocation, getCounty, getState }

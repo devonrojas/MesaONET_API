@@ -7,6 +7,7 @@
 
 require("dotenv").config();
 const rp = require('request-promise');
+const GoogleMapsService = require("./GoogleMapsService.js");
 
 const CAREER_ONE_STOP_API_TOKEN     = process.env.CAREER_ONE_STOP_API_TOKEN;
 const CAREER_ONE_STOP_API_USERID    = process.env.CAREER_ONE_STOP_API_USERID;
@@ -63,8 +64,8 @@ const fetch = async(code, location = 'US') => {
  * 
  * @return {object} Job posing data for occupation.
  */
-const fetchJobDetail = async(code, location = 'US', radius = 25, days = 30, tries = 0) => {
-    const OCCUPATION_JOB_DETAIL_URI = `/v1/jobsearch/${CAREER_ONE_STOP_API_USERID}/${code}/${location}/${radius}/${days}`;
+const fetchJobDetail = async(code, location = {short_name: "US", types: ["country", "political"]}, radius = 25, days = 30, tries = 0) => {
+    const OCCUPATION_JOB_DETAIL_URI = `/v1/jobsearch/${CAREER_ONE_STOP_API_USERID}/${code}/${location.short_name}/${radius}/${days}`;
     let options = buildOptions(OCCUPATION_JOB_DETAIL_URI);
 
     try {
@@ -73,11 +74,19 @@ const fetchJobDetail = async(code, location = 'US', radius = 25, days = 30, trie
     } catch(error) {
         if(error.statusCode == 404) {
             if(tries == 0) {
-                console.log("No data found for " + location + ". Trying CA...");
-                return fetchJobDetail(code, 'CA', radius, days, 1);
+                let loc;
+                if(location.types.includes("postal_code")) {
+                    loc = GoogleMapsService.getState(location.short_name);
+                } else if(location.types.includes("administrative_area_level_1")) {
+                    loc = {short_name: "US", types: ["country", "political"]}
+                }
+                console.log("No data found for " + location.short_name + ". Trying " + loc.short_name + "...");
+                return fetchJobDetail(code, location, radius, days, 1);
             } else if(tries == 1) {
-                console.log("No data found for " + location + ". Trying US...");
-                return fetchJobDetail(code, 'US', radius, days, 2);
+                if(location.types.includes("administrative_area_level_1")) {
+                    console.log("No data found for " + location.short_name + ". Trying US...");
+                    return fetchJobDetail(code, {short_name: "US", type: ["country", "political"]}, radius, days, 2);
+                }
             } else {
                 return null;
             }
