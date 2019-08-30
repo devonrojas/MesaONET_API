@@ -41,15 +41,14 @@ const findLocation = async(location) => {
  */
 const getCounty = async(location) => {
     let res = await _fetch(location);
-
-    res = res
+    let res1 = res
     .map(item => {return { short_name: item.short_name, types: item.types }})
-    .filter(item => 
-        item.types.includes("administrative_area_level_2"));
-    if(res.length == 0) {
-        throw new Error("No county data available for " + location);
+    .filter(item => item.types.includes("administrative_area_level_2"));
+    if(res1.length == 0) {
+        console.log("No county data available for " + location);
+        return false;
     }
-    return res[0];
+    return res1[0];
 }
 
 /**

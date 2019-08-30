@@ -83,7 +83,7 @@ class AcademicProgram {
                             _code: c._code,
                             _title: c._title,
                             _growth: c._growth,
-                            _salary: c._salary["NationalWagesList"]
+                            _salary: c._salary["NationalWagesList"][0]
                         }
                         this._careers.push(obj)
                     };
@@ -105,7 +105,7 @@ class AcademicProgram {
                         _code: c._code,
                         _title: c._title,
                         _growth: c._growth,
-                        _salary: c._salary["NationalWagesList"]
+                        _salary: c._salary["NationalWagesList"][0]
                     }
 
                     // Update career in program object
