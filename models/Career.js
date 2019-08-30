@@ -73,7 +73,7 @@ class Career {
      * @param {Array}   degree_types An array of degrees associated with a program
      * @param {string}  parth        A URL path pointing to a Mesa Academic Program page
      */
-    addRelatedProgram(program) {
+    async addRelatedProgram(program) {
         if(this._related_programs.map(p => p.title).indexOf(program.title) === -1) {
             this._related_programs.push(program);
             await this.saveToDatabase();

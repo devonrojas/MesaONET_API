@@ -73,7 +73,7 @@ class AcademicProgram {
                     // Build Career objects for all valid O*NET Codes
                     let c = new Career(career.code);
                     await c.retrieveCareerData();
-                    c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
+                    await c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
         
                     // Append career to careers array
                     let valid = await c.validateCareer();
@@ -97,7 +97,7 @@ class AcademicProgram {
                 await Utils.asyncForEach(this._careers, async(career, index) => {
                     console.log("[" + (index + 1) + "/" + existingProgram[0]._careers.length + "] " + "Checking " + career._code + " | " + career._title + "...\r");
                     let c = Object.assign(new Career(), career);
-                    c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
+                    await c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
 
                     let obj = {
                         _code: c._code,
