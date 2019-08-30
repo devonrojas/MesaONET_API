@@ -148,7 +148,7 @@ class AcademicProgram {
             this._careers
             .map(career => career._salary)
             .forEach(salary => {
-                temp.push(new Salary(...Object.values(salary[0])));
+                temp.push(new Salary(...Object.values(salary)));
             })
             // Reduce salary objects in array to single values.
             let o = temp.reduce((obj, item) => {

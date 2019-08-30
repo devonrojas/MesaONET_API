@@ -104,7 +104,6 @@ class JobTracker {
                 }
                 // Update any data in area if necessary
                 await area.update(this._code);
-                console.log(area);
                 this._areas.push(area);
                 // Update database document with new data
                 const writeOperation = (data) => [

@@ -76,7 +76,7 @@ const fetchJobDetail = async(code, location = {short_name: "US", types: ["countr
             if(tries == 0) {
                 let loc;
                 if(location.types.includes("postal_code")) {
-                    loc = GoogleMapsService.getState(location.short_name);
+                    loc = await GoogleMapsService.getState(location.short_name);
                 } else if(location.types.includes("administrative_area_level_1")) {
                     loc = {short_name: "US", types: ["country", "political"]}
                 } else {
