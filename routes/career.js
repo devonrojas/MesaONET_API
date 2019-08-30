@@ -102,17 +102,22 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
             jobData = jobData[0]._areas;
 
             let loc = await GoogleMapsService.getCounty(location);
-            
+
             if(loc) {
                 loc = loc.short_name;
                 jobData = jobData
-                .filter(item => item.area.short_name === loc)
-                .map(item => {
-                    item.data = item.data
-                        .filter(el => el._radius == radius)
-                        .map(el => el.data)[0];
-                    return item;
-                });
+                .filter(item => item.area.short_name === loc);
+                // Necessary map for county locations
+                if(jobData[0].area.types.includes("postal_code") || jobData[0].area.types.includes("administrative_area_level_2")) {
+                    jobData = jobData
+                    .map(item => {
+                        console.log(item.data);
+                        item.data = item.data
+                            .filter(el => el._radius == radius)
+                            .map(el => el.data)[0];
+                            return item;
+                    })
+                }
             } else {
                 loc = location;
                 jobData = jobData
@@ -134,6 +139,7 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                         item.data = item.data
                             .filter(el => el._radius == radius)
                             .map(el => el.data)[0];
+                        return item;
                     })
                 }
             }

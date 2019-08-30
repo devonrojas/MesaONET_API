@@ -69,6 +69,7 @@ class JobTracker {
 
             // Job Tracker record doesn't exist for area in database
             if(res.length === 0) {
+
                 // If location is a zip code, look up appropriate county
                 if(location.types.includes('postal_code')) {
                     area = new CountyArea(location);
@@ -103,6 +104,7 @@ class JobTracker {
                 }
                 // Update any data in area if necessary
                 await area.update(this._code);
+                console.log(area);
                 this._areas.push(area);
                 // Update database document with new data
                 const writeOperation = (data) => [
@@ -370,6 +372,7 @@ class CountyArea extends PrimitiveArea {
     async fetch(code) {
         let index = Math.floor(Math.random() * (+this._zip_code_aliases.length));
         let location = this._zip_code_aliases[index];
+        location = {short_name: location, types: ['postal_code']};
         try {
             await Utils.asyncForEach(this.data, async(radius) => {
                 let record = new JobRecord();
