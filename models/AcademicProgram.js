@@ -72,8 +72,8 @@ class AcademicProgram {
                     console.log("[" + (index + 1) + "/" + res.length + "] " + "Checking " + career.code + " | " + career.title + "...\r");
                     // Build Career objects for all valid O*NET Codes
                     let c = new Career(career.code);
-                    await c.retrieveCareerData();
                     c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
+                    await c.retrieveCareerData();
         
                     // Append career to careers array
                     let valid = await c.validateCareer();

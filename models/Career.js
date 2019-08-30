@@ -186,6 +186,13 @@ class Career {
         })
     }
 
+    /**
+     * Saves career data to careers collection in database
+     * 
+     * @async
+     * 
+     * @see {@link module:services/DatabaseService|DatabaseService}
+     */
     async saveToDatabase() {
         try {
             // Add career data to database
