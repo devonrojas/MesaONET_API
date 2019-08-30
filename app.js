@@ -74,6 +74,11 @@ app.use(bodyParser.json());
 app.use(cors(corsOptions));
 app.use(logger);
 
+app.use((req, res, next) => {
+    res.setHeader('Access-Controll-Allow-Origin', '*');
+    next();
+})
+
 // Routing middleware
 /**
  * Defines available /program routes
