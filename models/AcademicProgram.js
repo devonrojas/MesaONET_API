@@ -73,7 +73,7 @@ class AcademicProgram {
                     // Build Career objects for all valid O*NET Codes
                     let c = new Career(career.code);
                     await c.retrieveCareerData();
-                    await c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
+                    c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
         
                     // Append career to careers array
                     let valid = await c.validateCareer();
