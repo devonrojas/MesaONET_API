@@ -79,6 +79,7 @@ Router.post("/", async(req, res) => {
     ];
 
     let data = req.body;
+    console.log(data);
 
     // Make sure JSON payload is formatted properly
     try {
@@ -128,7 +129,7 @@ Router.post("/", async(req, res) => {
         if (programExists) {
             // Get all documents in programs collection for next code to generate in series
 
-            let p = new AcademicProgram(...data);
+            let p = new AcademicProgram(...Object.values(data));
             await p._retrieveAcademicProgramData();
 
             // Return program object as verification if successful
