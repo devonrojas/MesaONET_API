@@ -54,7 +54,7 @@ const Utils = require("../helpers/utils.js");
  */
 Router.post("/", async(req, res) => {
     res.setHeader("Allow-Access-Control-Origin", "*");
-    const keys = [
+    const SCHEMA = [
         {
             name: "title",
             type: {
@@ -83,7 +83,7 @@ Router.post("/", async(req, res) => {
     // Make sure JSON payload is formatted properly
     try {
         Object.keys(data).forEach(k => {
-            let key = keys.find(ky => ky.name == k);
+            let key = SCHEMA.find(ky => ky.name == k);
             if (key) {
                 if (key.type.fn(data[k])) {
                     if (key.allowed_vals && Array.isArray(key.allowed_vals)) {

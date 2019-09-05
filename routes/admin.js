@@ -16,9 +16,6 @@
 require("dotenv").config();
 const express = require('express');
 const fs = require("fs");
-const pdf = require("html-pdf");
-const html = fs.readFileSync("./out/index.html", "utf8");
-const options = {format: "Letter"};
 
 /**
  * @type {object}
@@ -41,10 +38,10 @@ const ACADEMIC_PROGRAMS = require('../misc/mesa_academic_programs_new.json');
  * FOR TESTING PURPOSES ONLY
  */
 Router.get("/test", (req, res) => {
-    pdf.create(html, options).toFile("./test.pdf", (err, r) => {
-        if(err) return console.error(err);
-        console.log(r);
-    })
+    // pdf.create(html, options).toFile("./test.pdf", (err, r) => {
+    //     if(err) return console.error(err);
+    //     console.log(r);
+    // })
     res.sendStatus(200);
 
     // try {
