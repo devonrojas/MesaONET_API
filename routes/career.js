@@ -111,7 +111,6 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                 if(jobData[0].area.types.includes("postal_code") || jobData[0].area.types.includes("administrative_area_level_2")) {
                     jobData = jobData
                     .map(item => {
-                        console.log(item.data);
                         item.data = item.data
                             .filter(el => el._radius == radius)
                             .map(el => el.data)[0];

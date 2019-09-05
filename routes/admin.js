@@ -15,6 +15,10 @@
 
 require("dotenv").config();
 const express = require('express');
+const fs = require("fs");
+const pdf = require("html-pdf");
+const html = fs.readFileSync("./out/index.html", "utf8");
+const options = {format: "Letter"};
 
 /**
  * @type {object}
@@ -36,25 +40,31 @@ const ACADEMIC_PROGRAMS = require('../misc/mesa_academic_programs_new.json');
 /**
  * FOR TESTING PURPOSES ONLY
  */
-Router.get("/test", async(req, res) => {
-    try {
-        res.sendStatus(200);
+Router.get("/test", (req, res) => {
+    pdf.create(html, options).toFile("./test.pdf", (err, r) => {
+        if(err) return console.error(err);
+        console.log(r);
+    })
+    res.sendStatus(200);
 
-        let careers = await db.queryCollection("careers", {});
-        let job = await db.queryCollection("job_tracking", {});
+    // try {
+    //     res.sendStatus(200);
 
-        careers = careers.map(career => career._code);
-        job = job.map(item => item._code);
+    //     let careers = await db.queryCollection("careers", {});
+    //     let job = await db.queryCollection("job_tracking", {});
 
-        careers.forEach(career => {
-            if(!job.includes(career)) {
-                console.log(career);
-            }
-        })
-        console.log("done");
-    } catch (error) {
-        console.error(error);
-    }
+    //     careers = careers.map(career => career._code);
+    //     job = job.map(item => item._code);
+
+    //     careers.forEach(career => {
+    //         if(!job.includes(career)) {
+    //             console.log(career);
+    //         }
+    //     })
+    //     console.log("done");
+    // } catch (error) {
+    //     console.error(error);
+    // }
 })
 
 /**
