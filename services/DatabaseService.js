@@ -31,33 +31,14 @@ const addToCollection = async(collectionName, data, writeOperation) => {
         if(Utils.isNull(data)) {
             throw new Error("Data contains null values. Database operation stopped.");
         }
-        let client = await MongoClient.connect(uri, { useNewUrlParser: true });
+        let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
         let DB = await client.db("heroku_zss53kwl");
-        // console.log("Successfully connected to database.")
 
         let collection = await DB.collection(collectionName);
-        // console.log("Collection <" + collectionName + ">" + " opened.");
-
-        let start = Date.now();
 
         let res = await collection.replaceOne(...writeOperation(data));
 
-        let end = Date.now();
-        let duration = end - start;
-
-        // let waitint = 100;
-        // process.stdout.write("Writing document to collection")
-        // let interval = setInterval(function() {
-        //     process.stdout.write(".")
-        // }, waitint);
-
-        // await timeout(duration * waitint / 10);
-
-        // clearInterval(interval);
-        // process.stdout.write("\nWrite operation successful.\n")
-
         await client.close();
-        // console.log("Database connection closed.");
     } catch(error) {
         console.error(error.message);
         error.message = "Database error. Please contact server adminstrator for details."
@@ -79,7 +60,7 @@ const addToCollection = async(collectionName, data, writeOperation) => {
  * @return {void}
  */
 const addMultipleToCollection = async(collectionName, data, atomicOps) => {
-    let client = await MongoClient.connect(uri, { useNewUrlParser: true })
+    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
     let DB = await client.db("heroku_zss53kwl");
     console.log("\nSuccessfully connected to database.");
 
@@ -121,7 +102,7 @@ const addMultipleToCollection = async(collectionName, data, atomicOps) => {
  * @return {void}
  */
 const queryCollection = async(collectionName, query) => {
-    let client = await MongoClient.connect(uri, { useNewUrlParser: true });
+    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
     const DB = await client.db("heroku_zss53kwl");
     // console.log("\nSuccessfully connected to database.");
 
@@ -147,7 +128,7 @@ const queryCollection = async(collectionName, query) => {
  * @return {void}
  */
 const deleteOne = async(collectionName, query) => {
-    let client = await MongoClient.connect(uri, {useNewUrlParser: true});
+    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
     let DB = await client.db("heroku_zss53kwl");
     console.log("\nSuccessfully connected to database.");
 
@@ -174,7 +155,7 @@ const deleteOne = async(collectionName, query) => {
  * @return {void}
  */
 const deleteMany = async(collectionName, query) => {
-    let client = await MongoClient.connect(uri, {useNewUrlParser: true});
+    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
     let DB = await client.db("heroku_zss53kwl");
     console.log("\nSuccessfully connected to database.");
 
@@ -201,7 +182,7 @@ const deleteMany = async(collectionName, query) => {
  * @return {void}
  */
 const updateMany = async(collectionName, query) => {
-    let client = await MongoClient.connect(uri, {useNewUrlParser: true});
+    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
     const DB = await client.db("heroku_zss53kwl");
     console.log("\nSuccessfully connected to database.");
 
@@ -222,42 +203,38 @@ const updateMany = async(collectionName, query) => {
  * @return {void}
  */
 const cleanCollections = async() => {
-    MongoClient.connect(uri, { useNewUrlParser: true }, async(err, client) => {
-        if(err) {
-            console.error(err);
-        } else {
-            let DB = client.db("heroku_zss53kwl");
+    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-            let careersCollection = DB.collection("careers");
-            let jobTrackingCollection = DB.collection("job_tracking");
+    let DB = client.db("heroku_zss53kwl");
 
-            let careers = await careersCollection.find().toArray();
-            let jobTracking = await jobTrackingCollection.find().toArray();
+    let careersCollection = DB.collection("careers");
+    let jobTrackingCollection = DB.collection("job_tracking");
 
-            careers = careers.map(career => career._code);
-            jobTracking = jobTracking.map(career => career._code);
+    let careers = await careersCollection.find().toArray();
+    let jobTracking = await jobTrackingCollection.find().toArray();
 
-            console.log("Cleaning careers and job_tracking collections for missing data...");
+    careers = careers.map(career => career._code);
+    jobTracking = jobTracking.map(career => career._code);
 
-            if(careers.length > jobTracking.length) {
-                careers.forEach(async(code) => {
-                    if(!jobTracking.includes(code)) {
-                        await careersCollection.deleteOne({"_code": code});
-                        console.log("Deleted " + code + " from careers collection.");
-                    }
-                })
-            } else if(jobTracking.length > careers.length) {
-                jobTracking.forEach(async(code) => {
-                    if(!careers.includes(code)) {
-                        await jobTrackingCollection.deleteOne({"_code": code});
-                        console.log("Deleted " + code + " from job_tracking collection.");
-                    }
-                })
+    console.log("Cleaning careers and job_tracking collections for missing data...");
+
+    if(careers.length > jobTracking.length) {
+        careers.forEach(async(code) => {
+            if(!jobTracking.includes(code)) {
+                await careersCollection.deleteOne({"_code": code});
+                console.log("Deleted " + code + " from careers collection.");
             }
+        })
+    } else if(jobTracking.length > careers.length) {
+        jobTracking.forEach(async(code) => {
+            if(!careers.includes(code)) {
+                await jobTrackingCollection.deleteOne({"_code": code});
+                console.log("Deleted " + code + " from job_tracking collection.");
+            }
+        })
+    }
 
-            client.close();
-        }
-    })
+    await client.close();
 }
 
 module.exports = {
