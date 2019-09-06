@@ -209,6 +209,14 @@ class Career {
         }
     }
 
+    /**
+     * Updates salary data
+     * @async
+     *
+     * @see {@link module:services/CareerOneStopService|CareerOneStopService}
+     *  
+     * @param {string} location Location to search
+     */
     async updateSalary(location) {
         let career_one_stop_data = await CareerOneStopService.fetch(this._code, location);
         this._salary = this._buildSalary(career_one_stop_data['Wages']);

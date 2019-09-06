@@ -145,8 +145,8 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
 
             career["_job_data"] = jobData[0];
             // Pull location-specific salary data
-            career.updateSalary(location);
-            
+            await career.updateSalary(location);
+
             console.log("Career retrieval complete.");
             res.status(200).send(career);
         } else
