@@ -89,6 +89,7 @@ class Utils {
         const totalCalls = calls.length;
         console.log(`Total calls: ${totalCalls}`);
         let p = [];
+        let i = 1;
         while(calls.length > 0) {
             // Take a call chunk specified by rateLimitCount
             let callstoExecute = calls.slice(0, rateLimitCount);
@@ -96,7 +97,10 @@ class Utils {
             calls = calls.slice(rateLimitCount, calls.length);
     
             let promises = [];
-            callstoExecute.forEach((call) => promises.push(new Promise((resolve, reject) => call(resolve))));
+            callstoExecute.forEach((call) => {
+                console.log("Executing call " + i + "/" + totalCalls);
+                promises.push(new Promise((resolve, reject) => call(resolve)))
+            });
     
             // Execute all promises in call chunk
             let res = await Promise.all(promises);
@@ -104,6 +108,7 @@ class Utils {
             p = p.concat(res);
             // Wait for rateLimitTime to pass before moving on to next call chunk
             await Utils.timeout(rateLimitTime);
+            i++;
         }
         return p;
     }

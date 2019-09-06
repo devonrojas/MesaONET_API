@@ -83,11 +83,11 @@ const fetchJobDetail = async(code, location = {short_name: "US", types: ["countr
                 } else {
                     loc = location
                 }
-                console.log("No data found for " + location.short_name + ". Trying " + loc.short_name + "...");
+                // console.log("No data found for " + location.short_name + ". Trying " + loc.short_name + "...");
                 return fetchJobDetail(code, location, radius, days, 1);
             } else if(tries == 1) {
                 if(location.types.includes("administrative_area_level_1")) {
-                    console.log("No data found for " + location.short_name + ". Trying US...");
+                    // console.log("No data found for " + location.short_name + ". Trying US...");
                     return fetchJobDetail(code, {short_name: "US", type: ["country", "political"]}, radius, days, 2);
                 }
             } else {
