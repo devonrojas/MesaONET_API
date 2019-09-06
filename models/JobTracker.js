@@ -14,6 +14,59 @@ const db = require("../services/DatabaseService.js");
 const Utils = require("../helpers/utils.js");
 
 const FETCH_PERIOD = 30; // Days
+const STATES = [
+    "AL",
+    "AK",
+    "AZ",
+    "AR",
+    "CA",
+    "CO",
+    "CT",
+    "DE",
+    "DC",
+    "FL",
+    "GA",
+    "HI",
+    "ID",
+    "IL",
+    "IN",
+    "IA",
+    "KS",
+    "KY",
+    "LA",
+    "ME",
+    "MD",
+    "MA",
+    "MI",
+    "MN",
+    "MS",
+    "MO",
+    "MT",
+    "NE",
+    "NV",
+    "NH",
+    "NJ",
+    "NM",
+    "NY",
+    "NC",
+    "ND",
+    "OH",
+    "OK",
+    "OR",
+    "PA",
+    "RI",
+    "SC",
+    "SD",
+    "TN",
+    "TX",
+    "UT",
+    "VT",
+    "VA",
+    "WA",
+    "WV",
+    "WI",
+    "WY"
+];
 
 /**
  * Class containing logic to build job posting data for an O*NET Occupation.
@@ -142,7 +195,7 @@ class JobTracker {
         }
         locations = locations.concat(location);
         // Filter any duplicate locations out of array
-        this._locations = [...new Set(Array.from(locations).map(area => area.short_name))]
+        this._locations = [...new Set(Array.from(locations).map(area => area.short_name).concat(STATES))]
         .map(area => {
             return locations.find(loc => loc.short_name === area)
         });
