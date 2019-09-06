@@ -57,6 +57,9 @@ class JobTracker {
             if(location.types.includes("administrative_area_level_2")) {
                 return;
             }
+            if(this._areas.map(area => area.area.short_name).includes(location.short_name)) {
+                return;
+            }
             // Map zip code to county for querying purposes
             if(location.types.includes("postal_code")) {
                 areaSearch = (await GoogleMapsService.getCounty(areaSearch)).short_name;   

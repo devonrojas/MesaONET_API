@@ -109,7 +109,7 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                 jobData = jobData
                 .filter(item => item.area.short_name === loc);
                 // Necessary map for county locations
-                if(jobData[0].area.types.includes("postal_code") || jobData[0].area.types.includes("administrative_area_level_2")) {
+                if(jobData.length > 0 && (jobData[0].area.types.includes("postal_code") || jobData[0].area.types.includes("administrative_area_level_2"))) {
                     jobData = jobData
                     .map(item => {
                         item.data = item.data
@@ -117,6 +117,8 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                             .map(el => el.data)[0];
                             return item;
                     })
+                } else {
+                    loc = location;
                 }
             } else {
                 loc = location;
@@ -124,16 +126,21 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                 .filter(item => item.area.short_name === loc);
             }
 
+
             // If no data exists for requested location, pull data
             if(jobData.length === 0) {
                 console.log("No job data exists for " + loc + ".");
                 let j = new JobTracker(code, loc);
                 await j.retrieveData();
-                jobData = j.getAreas()
-                .filter(item => item.area.short_name === j._location);
+
+                let l = (await GoogleMapsService.findLocation(j._location)).map(item => item.short_name);
+                let areas = j.getAreas().map(item => item.area.short_name);
+                areas.forEach((area, index) => {
+                    if(l.includes(area)) jobData = j.getAreas()[index];
+                })
 
                 // Necessary map for county locations
-                if(jobData[0].area.types.includes("postal_code") || jobData[0].area.types.includes("administrative_area_level_2")) {
+                if(jobData && (jobData.area.types.includes("postal_code") || jobData.area.types.includes("administrative_area_level_2"))) {
                     jobData = jobData
                     .map(item => {
                         item.data = item.data
@@ -144,7 +151,7 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                 }
             }
 
-            career["_job_data"] = jobData[0];
+            career["_job_data"] = jobData[0] || jobData;
             // Pull location-specific salary data
             await career.updateSalary(location);
 
