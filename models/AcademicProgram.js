@@ -95,8 +95,6 @@ class AcademicProgram {
 
                 // Run through all careers in program to check for updates
                 await Utils.asyncForEach(this._careers, async(career, index) => {
-                    console.log("[" + (index + 1) + "/" + existingProgram[0]._careers.length + "] " + "Checking " + career._code + " | " + career._title + "...\r");
-                    await this.checkRelatedPrograms(career);
 
                     let obj = {
                         _code: c._code,
@@ -108,6 +106,9 @@ class AcademicProgram {
                     // Update career in program object
                     this._careers[index] = obj;
                 })
+
+                await this.checkRelatedPrograms();
+                
                 console.log();
             }
 
