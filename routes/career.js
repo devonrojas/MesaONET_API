@@ -24,6 +24,7 @@ const Router = express.Router();
 const db = require("../services/DatabaseService.js");
 const GoogleMapsService = require("../services/GoogleMapsService.js");
 const JobTracker = require("../models/JobTracker.js");
+const Career = require("../models/Career.js");
 
 /**
  * Retrieves all [Careers]{@link module:models/Career} in database.
