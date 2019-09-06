@@ -96,10 +96,7 @@ class AcademicProgram {
                 // Run through all careers in program to check for updates
                 await Utils.asyncForEach(this._careers, async(career, index) => {
                     console.log("[" + (index + 1) + "/" + existingProgram[0]._careers.length + "] " + "Checking " + career._code + " | " + career._title + "...\r");
-                    career = (await db.queryCollection("careers", {"_code": career._code}))[0];
-                    let c = Object.assign(new Career(), career);
-                    await c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
-                    await c.saveToDatabase();
+                    await this.checkRelatedPrograms(career);
 
                     let obj = {
                         _code: c._code,
@@ -130,6 +127,16 @@ class AcademicProgram {
         } catch(error) {
             console.error(error);
         }
+    }
+
+    async checkRelatedPrograms() {
+        await Utils.asyncForEach(this._careers, (career, index) => {
+            console.log("[" + (index + 1) + "/" + this._careers.length + "] " + "Checking " + career._code + " | " + career._title + "...\r");
+            career = (await db.queryCollection("careers", {"_code": career._code}))[0];
+            let c = Object.assign(new Career(), career);
+            await c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
+            await c.saveToDatabase();
+        })
     }
 
     /**

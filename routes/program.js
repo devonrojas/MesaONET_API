@@ -215,6 +215,8 @@ Router.get("/:code", async(req, res) => {
         code = +code;
         let program = await db.queryCollection("programs", {"_code": code});
         if(program.length > 0) {
+            let p = Object.assign(new AcademicProgram(""), program[0]);
+            p.checkRelatedPrograms();
             res.status(200).send(program[0]);
         } else {
             throw new Error("No program found. Please try again.")
