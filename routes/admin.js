@@ -95,6 +95,7 @@ Router.get("/update-job-tracking", async(req, res) => {
 
             // Cycle through each career and update info if necessary.
             let operations = await new Throttler(careers, RATE_LIMIT, RATE_LIMIT_TIME).execute(fn);
+            console.log("here")
 
             console.log("Job Tracking data updated. Total careers: " + operations.length);
         }

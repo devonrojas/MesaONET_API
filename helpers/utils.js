@@ -98,8 +98,11 @@ class Utils {
     
             let promises = [];
             callstoExecute.forEach((call) => {
-                console.log("Executing call " + i + "/" + totalCalls);
-                promises.push(new Promise((resolve, reject) => call(resolve)))
+                promises.push(new Promise((resolve, reject) => {
+                    console.log("Executing call " + i + "/" + totalCalls);
+                    call(resolve);
+                    i++;
+                }))
             });
     
             // Execute all promises in call chunk
@@ -108,7 +111,6 @@ class Utils {
             p = p.concat(res);
             // Wait for rateLimitTime to pass before moving on to next call chunk
             await Utils.timeout(rateLimitTime);
-            i++;
         }
         return p;
     }
