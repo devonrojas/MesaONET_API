@@ -131,7 +131,7 @@ class AcademicProgram {
     }
 
     async checkRelatedPrograms() {
-        await Utils.asyncForEach(this._careers, (career, index) => {
+        await Utils.asyncForEach(this._careers, async(career, index) => {
             console.log("[" + (index + 1) + "/" + this._careers.length + "] " + "Checking " + career._code + " | " + career._title + "...\r");
             career = (await db.queryCollection("careers", {"_code": career._code}))[0];
             let c = Object.assign(new Career(), career);
