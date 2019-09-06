@@ -209,6 +209,11 @@ class Career {
         }
     }
 
+    async updateSalary(location) {
+        let career_one_stop_data = await CareerOneStopService.fetch(this._code, location);
+        this._salary = this._buildSalary(career_one_stop_data['Wages']);
+    }
+
     /**
      * Builds an object containing national, state, and local salary data for Career.
      * 

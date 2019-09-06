@@ -95,7 +95,7 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
         let career = await db.queryCollection("careers", {"_code": code})
         if (career.length > 0) {
             console.log("Career found!");
-            career = career[0];
+            career = Object.assign(new Career(code), career[0]);
     
             let jobData = await db.queryCollection("job_tracking", {"_code": code}); // Query database with career code & area
 
@@ -144,6 +144,9 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
             }
 
             career["_job_data"] = jobData[0];
+            // Pull location-specific salary data
+            career.updateSalary(location);
+            
             console.log("Career retrieval complete.");
             res.status(200).send(career);
         } else
