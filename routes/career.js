@@ -117,6 +117,14 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                             .map(el => el.data)[0];
                             return item;
                     })
+                } else if(jobData.length > 0 && jobData[0].data[0].hasOwnProperty("_radius")) {
+                    jobData = jobData
+                    .map(item => {
+                        item.data = item.data
+                            .filter(el => el._radius == radius)
+                            .map(el => el.data)[0];
+                            return item;
+                    })
                 } else {
                     loc = location;
                 }
@@ -138,7 +146,6 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                 areas.forEach((area, index) => {
                     if(l.includes(area)) jobData = j.getAreas()[index];
                 })
-
                 // Necessary map for county locations
                 if(jobData && (jobData.area.types.includes("postal_code") || jobData.area.types.includes("administrative_area_level_2"))) {
                     jobData = jobData
@@ -148,6 +155,10 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                             .map(el => el.data)[0];
                         return item;
                     })
+                } else if(jobData && jobData.data[0].hasOwnProperty("_radius")) {
+                    jobData.data = jobData.data
+                    .filter(el => el._radius == radius)
+                    .map(el => el.data)[0];
                 }
             }
 
