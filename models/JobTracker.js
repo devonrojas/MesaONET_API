@@ -193,9 +193,14 @@ class JobTracker {
         } else {
             locations = [];
         }
-        locations = locations.concat(location);
+        locations = locations.concat(location).concat(STATES.map(state => {
+            return {
+                short_name: state,
+                types: ['administrative_area_level_1', 'political']
+            }
+        }));
         // Filter any duplicate locations out of array
-        this._locations = [...new Set(Array.from(locations).map(area => area.short_name).concat(STATES))]
+        this._locations = [...new Set(Array.from(locations).map(area => area.short_name))]
         .map(area => {
             return locations.find(loc => loc.short_name === area)
         });

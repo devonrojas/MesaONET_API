@@ -72,6 +72,7 @@ const fetchJobDetail = async(code, location = {short_name: "US", types: ["countr
         const data = await rp(options);
         return data;
     } catch(error) {
+        console.log(error.message);
         if(error.statusCode == 404) {
             if(tries == 0) {
                 let loc;
@@ -94,7 +95,7 @@ const fetchJobDetail = async(code, location = {short_name: "US", types: ["countr
             }
         } else {
             if(error.name == "RequestError") {
-                console.log("Request timed out.");
+                console.log("Request timed out. Retrying...");
                 return fetchJobDetail(code, location, radius, days, 2);
             } else {
                 console.error("Unknown error.");
