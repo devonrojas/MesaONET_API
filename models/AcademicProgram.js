@@ -112,6 +112,8 @@ class AcademicProgram {
                 console.log();
             }
 
+            // Filter any null data before aggregation
+            this._careers = this._careers.filter(career => career._salary !== null && career._salary !== undefined)
             // Aggregate salary and growth data from careers
             await this._aggregateData();
 
