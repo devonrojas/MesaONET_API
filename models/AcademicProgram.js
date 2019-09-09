@@ -74,8 +74,9 @@ class AcademicProgram {
                     let c = new Career(career.code);
                     c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
                     await c.retrieveCareerData();
-        
-                    if(valid) {
+    
+                    console.log(c._code);
+                    if(c.hasOwnProperty("_salary")) {
                         // Only save career growth and salary info in program data
                         let obj = {
                             _code: c._code,
