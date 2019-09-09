@@ -57,6 +57,7 @@ class Utils {
      * @return {boolean} Whether or not the object is valid 
      */
     static isValidObj(keys, obj) {
+        console.log(obj);
         if(!keys || !obj) {
             return false;
         }

@@ -68,7 +68,7 @@ class AcademicProgram {
                 // Get all matching occupations for program name
                 const keyword_url = "https://services.onetcenter.org/ws/online/search?keyword=" + this._title.toLowerCase();
                 let res = await ONETService.fetch(keyword_url);
-                await Utils.asyncForEach(res, async(career, index) => {
+                await Utils.asyncForEach(res.slice(0, 5), async(career, index) => {
                     console.log("[" + (index + 1) + "/" + res.length + "] " + "Checking " + career.code + " | " + career.title + "...\r");
                     // Build Career objects for all valid O*NET Codes
                     let c = new Career(career.code);
