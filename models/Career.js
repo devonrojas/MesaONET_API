@@ -140,7 +140,7 @@ class Career {
                 Object.assign(this, obj);
             }
         } catch(error) {
-            console.log(error.message);
+            console.log(error.message + " | Career code: " + this._code);
         }
     }
 
@@ -165,10 +165,8 @@ class Career {
             "_education", 
             "_video"
         ];
+        console.log(this);
 
-        Object.keys(this).forEach(key => {
-
-        }) 
         return Object.keys(this).every(key => {
             if(!this[key]) {
                 return false;
