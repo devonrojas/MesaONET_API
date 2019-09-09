@@ -75,8 +75,6 @@ class AcademicProgram {
                     c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
                     await c.retrieveCareerData();
         
-                    // Append career to careers array
-                    let valid = await c.validateCareer();
                     if(valid) {
                         // Only save career growth and salary info in program data
                         let obj = {
@@ -95,7 +93,7 @@ class AcademicProgram {
 
                 // Run through all careers in program to check for updates
                 await Utils.asyncForEach(this._careers, async(career, index) => {
-
+                    console.log(career._code);
                     let obj = {
                         _code: c._code,
                         _title: c._title,
@@ -128,7 +126,8 @@ class AcademicProgram {
             await db.addToCollection("programs", this, writeOp);
 
         } catch(error) {
-            console.error(error);
+            console.error(error.message);
+            console.error(error.fileName + " | " + error.lineNumber + " | " + error.columnNumber)
         }
     }
 
