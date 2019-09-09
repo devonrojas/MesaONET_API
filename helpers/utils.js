@@ -3,8 +3,6 @@
  * @author Devon Rojas
  */
 
-const readline = require("readline");
-
 /**
  * Class containing utility functions for application.
  */
@@ -48,6 +46,36 @@ class Utils {
         } else {
             return typeof data == null;
         }
+    }
+
+    /**
+     * Checks if an object contains a list of keys and that those key/values are not null or undefined.
+     * 
+     * @param {Array}   keys Array of keys to check object against
+     * @param {Object}  obj  An object to check
+     * 
+     * @return {boolean} Whether or not the object is valid 
+     */
+    static isValidObj(keys, obj) {
+        if(!keys || !obj) {
+            return false;
+        }
+        if(!Array.isArray(keys)) {
+            return false;
+        }
+        if(typeof obj !== 'object') {
+            return false;
+        }
+        
+        keys.forEach(key => {
+            if(!Object.keys(obj).includes(key)) {
+                return false;
+            } else if(obj[key] === null || obj[key] === undefined) {
+                return false;
+            }
+        })
+
+        return true;
     }
 
     /**

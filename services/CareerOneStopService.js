@@ -8,6 +8,7 @@
 require("dotenv").config();
 const rp = require('request-promise');
 const GoogleMapsService = require("./GoogleMapsService.js");
+const Utils = require("../helpers/utils.js");
 
 const CAREER_ONE_STOP_API_TOKEN     = process.env.CAREER_ONE_STOP_API_TOKEN;
 const CAREER_ONE_STOP_API_USERID    = process.env.CAREER_ONE_STOP_API_USERID;
@@ -42,7 +43,11 @@ const fetch = async(code, location = 'US') => {
     try {
         const data = await rp(options);
         if(data.hasOwnProperty("OccupationDetail")) {
-            return data['OccupationDetail'][0];
+            if(Utils.isValidObj(data['OccupationDetail'][0])) {
+                return data['OccupationDetail'][0];
+            } else {
+                throw new Error("Did not receive complete career data from CareerOneStop API. Skipping career...");
+            }
         }
     } catch(error) {
         console.error(error);

@@ -140,7 +140,7 @@ class Career {
                 Object.assign(this, obj);
             }
         } catch(error) {
-            console.log("here", error.message);
+            console.log(error.message);
         }
     }
 
