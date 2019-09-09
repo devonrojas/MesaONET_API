@@ -22,6 +22,8 @@ const fs = require("fs");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
 const db = require("./services/DatabaseService.js");
+
+// Keep server alive
 const http = require("http");
 setInterval(function() {
     http.get("http://infinite-spire-51367.herokuapp.com");
