@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "C:\\Users\\drojas\\Desktop\\ONET\\client"
+		},
+		{
+			"path": "C:\\Users\\drojas\\Desktop\\ONET\\server"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "client"
+	}
+}

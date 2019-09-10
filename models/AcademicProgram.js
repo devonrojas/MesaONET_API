@@ -93,7 +93,8 @@ class AcademicProgram {
 
                 // Run through all careers in program to check for updates
                 await Utils.asyncForEach(this._careers, async(career, index) => {
-                    console.log(career._code);
+                    let c = Object.assign(new Career(), career);
+
                     let obj = {
                         _code: c._code,
                         _title: c._title,
@@ -220,6 +221,7 @@ class AcademicProgram {
 
             return {
                 title: program._title,
+                code: program._code,
                 degree_types: program._degree_types,
                 path: path
             }
