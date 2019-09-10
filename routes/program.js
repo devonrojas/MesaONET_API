@@ -231,4 +231,28 @@ Router.get("/:code", async(req, res) => {
     }
 });
 
+Router.get("/:code/title", async(req,res) => {
+    let code = req.params.code;
+    try {
+        if(isNaN(code)) {
+            throw new Error("Program code must be a number.");
+        }
+        code = +code;
+        let program = await db.queryCollection("programs", {"_code": code});
+        console.log(program);
+        if(program.length > 0) {
+            res.status(200).send(program[0]["_title"]);
+        } else {
+            throw new Error("No program found. Please try again.")
+        }
+    } catch(error) {
+        console.error(error.message);
+        if(error.statusCode) {
+            res.status(error.statusCode).send(error.message);
+        } else {
+            res.status(404).send(error.message);
+        }
+    }
+})
+
 module.exports = Router;
