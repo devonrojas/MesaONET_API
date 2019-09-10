@@ -93,13 +93,13 @@ class AcademicProgram {
 
                 // Run through all careers in program to check for updates
                 await Utils.asyncForEach(this._careers, async(career, index) => {
-                    let c = Object.assign(new Career(), career);
+                    let c = Object.assign(new Career(career["_code"]), career);
 
                     let obj = {
                         _code: c._code,
                         _title: c._title,
                         _growth: c._growth,
-                        _salary: c._salary["NationalWagesList"][0]
+                        _salary: c._salary
                     }
 
                     // Update career in program object
