@@ -241,6 +241,7 @@ Router.get("/:code/title", async(req,res) => {
         let program = await db.queryCollection("programs", {"_code": code});
         console.log(program);
         if(program.length > 0) {
+            res.setHeader("Content-Type", "application/json");
             res.status(200).send(program[0]["_title"]);
         } else {
             throw new Error("No program found. Please try again.")
