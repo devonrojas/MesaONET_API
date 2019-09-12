@@ -23,9 +23,8 @@ const Router = express.Router();
 
 // Module imports
 const db = require("../services/DatabaseService.js");
-const JobTracker = require("../models/JobTracker.js");
-const DataExportService = require("../services/DataExportService.js");
 const AcademicProgram = require("../models/AcademicProgram.js");
+const Career = require("../models/Career.js");
 
 const Utils = require("../helpers/utils.js");
 
@@ -75,6 +74,27 @@ Router.post("/", async(req, res) => {
                 "Certificate of Performance",
                 "ADT"
             ]
+        },
+        {
+            name: "relevance_score",
+            type: {
+                name: "number",
+                fn: !isNan
+            }
+        },
+        {
+            name: "soc_blacklist", 
+            type: {
+                name: "Array",
+                fn: Utils.isArray
+            }
+        },
+        {
+            name: "soc_adds",
+            type: {
+                name: "Array",
+                fn: Utils.isArray
+            }
         }
     ];
 
@@ -127,7 +147,7 @@ Router.post("/", async(req, res) => {
 
         if (programExists) {
             // Build new program
-            let p = new AcademicProgram(...Object.values(data));
+            let p = new AcademicProgram(data["title"], null, data["degree_types"], data["relevance_score"], data["soc_blacklist"], data["soc_adds"]);
             await p.retrieveAcademicProgramData();
 
             // Return program object as verification if successful
@@ -231,6 +251,194 @@ Router.get("/:code", async(req, res) => {
     }
 });
 
+/**
+ * Updates a program
+ * 
+ * @name PUT/program/:code
+ * @function 
+ * @memberof module:routes/program~programRouter
+ * 
+ * @param {number} code Program code to update
+ */
+Router.put("/:code", async(req, res) => {
+    let code = req.params.code;
+    let data = req.body;
+
+    const KEYS = [
+        "title",
+        "degree_types",
+    ]
+
+    if(code) {
+        let validObj = data && Object.keys(data).every(key => KEYS.includes(key));
+        if(validObj) {
+            try {
+                let p = await db.queryCollection("programs", {"_code": +code });
+                if(p.length > 0) {
+                    p = Object.assign(new AcademicProgram(), p[0]);
+                    if(data["degree_types"]) {
+                        p["_degree_types"] = data["degree_types"];
+                    }
+                    if(data["title"]) {
+                        p["_title"] = data["title"];
+                        await p.updateCareers();
+                    }
+                } else {
+                    res.status(404).send("No program found for code. If you are trying to create a program, please send a POST request to /program/");
+                }
+    
+                let update = [
+                    { "_code": +code },
+                    { $set: { ...p }},
+                    { upsert: true }
+                ]
+                await db.updateOne("programs", update);
+            
+                res.status(200).send(p);
+            } catch(error) {
+                console.error(error);
+                res.status(500).send(error.message);
+            }
+        } else {
+            res.status(400).send("Invalid object. Please try again.");
+        }
+    } else {
+        res.sendStatus(404);
+    }
+})
+
+/**
+ * Deletes a program
+ * 
+ * @name DELETE/program/:code
+ * @function
+ * @memberof module:routes/program~programRouter
+ * 
+ * @param {number} code Program code to delete
+ */
+Router.delete("/:code", async(req, res) => {
+    let code = req.params.code;
+    if(code) {
+        try {
+            let p = await db.queryCollection("programs", {"_code": +code});
+            if(p.length > 0) {
+                await db.deleteOne("programs", {"_code": code});
+                res.status(200).send(p[0]["_title"] + " program deleted.");
+            } else {
+                res.status(404).send("No program found for code.");
+            }
+        } catch(error) {
+            res.status(500).send(error.message);
+        }
+    } else {
+        res.sendStatus(404);
+    }
+})
+
+/**
+ * Adds a career to a program
+ * 
+ * @name POST/program/:code/career/:soc_code
+ * @function
+ * @memberof module:routes/program~programRouter
+ * 
+ * @param {number}  code        Program code to look up
+ * @param {string}  soc_code    Career code to add to program
+ */
+Router.post("/:code/career/:soc_code", async(req, res) => {
+    let code = req.params.code;
+    let soc_code = req.params.soc_code;
+
+    try {
+        let p = await db.queryCollection("programs", {"_code": +code});
+        if(p.length > 0) {
+            p = Object.assign(new AcademicProgram(), p[0]);
+            if(!p.hasCareer(soc_code)) {
+                let c = await db.queryCollection("careers", {"_code": soc_code });
+                if(c.length > 0) {
+                    c = Object.assign(new Career(soc_code), c[0]);
+                } else {
+                    // Create new career;
+                    c = new Career(soc_code);
+                    c.setRelatedPrograms(await p._buildRelatedProgramData(c._code))
+                    await c.retrieveCareerData();
+                }
+                let obj = {
+                    _code: c._code,
+                    _title: c._title,
+                    _growth: c._growth,
+                    _salary: c._salary["NationalWagesList"][0]
+                }
+                await p.addCareer(obj);
+                let update = [
+                    { "_code": +code },
+                    { $set: { ...p }},
+                    { upsert: true }
+                ]
+                await db.updateOne("programs", update);
+                res.status(201).send(soc_code + " successfully added to " + p["_title"] + " program.");
+            } else {
+                res.status(409).send(p._title + " program already contains code " + soc_code + ".");
+            }
+        } else {
+            res.status(404).send("No program found. Please try again.")
+        }
+    } catch(error) {
+        res.status(500).send(error.message);
+    }
+})
+
+/**
+ * Deletes a career from a program
+ * 
+ * @name DELETE/program/:code/career/:soc_code
+ * @function
+ * @memberof module:routes/program~programRouter
+ * 
+ * @param {number}  code        Program code to look up
+ * @param {string}  soc_code    Career code to delete from program
+ */
+Router.delete("/:code/career/:soc_code", async(req, res) => {
+    let code = req.params.code;
+    let soc_code = req.params.soc_code;
+    if(code) {
+        try {
+            let p = await db.queryCollection("programs", {"_code": +code});
+            if(p.length > 0) {
+                p = Object.assign(new AcademicProgram(), p[0]);
+                if(p.hasCareer(soc_code)) {
+                    await p.removeCareer(soc_code);
+                    let update = [
+                        { "_code": +code },
+                        { $set: { ...p }},
+                        { upsert: true }
+                    ]
+                    await db.updateOne("programs", update);
+                    res.status(200).send(soc_code + " deleted from " + p["_title"] + " program.");
+                } else{
+                    res.status(404).send(p._title + " program does not contain code " + soc_code + ".");
+                }
+            } else {
+                res.status(404).send("No program found for code.");
+            }
+        } catch(error) {
+            console.error(error);
+            res.status(500).send(error.message);
+        }
+    } else {
+        res.sendStatus(404);
+    }
+})
+
+/**
+ * Retrieves a program title
+ * 
+ * @name GET/program/:code/title
+ * @function
+ * @memberof module:routes/program~programRouter
+ * 
+ * @param {number}  code        Program code to look up
+ */
 Router.get("/:code/title", async(req,res) => {
     let code = req.params.code;
     try {

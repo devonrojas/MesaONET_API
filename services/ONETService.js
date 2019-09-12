@@ -65,7 +65,7 @@ const getCareerTechnicalSkills = async(code) => {
  * 
  * @param {string} url URL to send a request to.
  */
-const fetch = async(url) => {
+const fetch = async(url, relevance_score) => {
     try {
         ONET_OPTIONS.uri = url;    
         let result = await rp(ONET_OPTIONS);
@@ -77,7 +77,7 @@ const fetch = async(url) => {
             result = await rp(ONET_OPTIONS);
 
             result = result.hasOwnProperty('occupation') 
-            ? result.occupation.filter(res => res.relevance_score > RELEVANCE_SCORE_CAP)
+            ? result.occupation.filter(res => res.relevance_score > relevance_score)
                     .map(res => {return {code: res.code, title: res.title}}) 
             : null;
         }

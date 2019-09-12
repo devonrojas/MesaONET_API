@@ -24,12 +24,13 @@ class AcademicProgram {
      * Creates an academic program.
      * @param {string} title                The name of the program.
      * @param {Array}  [degree_types=[]]    The types of degrees or certifications offered under the program.
+     * @param {number} [code=0]             A program code
      */
-    constructor(title, degree_types = []) {
+    constructor(title, code, degree_types = [], relevance_score = 50, soc_blacklist = [], soc_adds = [], keyword = "") {
         /** @private */
         this._title = title;
         /** @private */
-        this._code = 0;
+        this._code = code ? code : 0;
         /** @private */
         this._careers = [];
         /** @private */
@@ -38,6 +39,42 @@ class AcademicProgram {
         this._aggregate_salary = [];
         /** @private */
         this._aggregate_growth = 0;
+        /** @private */
+        this._relevance_score = relevance_score;
+        /** @private */
+        this._soc_blacklist = soc_blacklist;
+        /** @private */
+        this._soc_adds = soc_adds.map(code => {
+            return {
+                code: code,
+                title: "N/A"
+            }
+        });
+        /** @private */
+        this._keyword = keyword;
+    }
+
+    async addCareer(career) {
+        if(!this._careers.map(career => career._code).includes(career._code)) {
+            this._careers.push(career);
+            await this._aggregateData();
+        } else {
+            console.log("Career " + career._title + " already exists in program.");
+        }
+    }
+
+    async removeCareer(code) {
+        if(this._careers.map(career => career._code).includes(code)) {
+            let idx = this._careers.map(career => career._code).indexOf(code);
+            this._careers.splice(idx, 1);
+            await this._aggregateData();
+        } else {
+            console.log("Career " + code + " already exists in program.");
+        }
+    }
+    
+    hasCareer(code) {
+        return this._careers.map(career => career._code).includes(code);
     }
 
     /**
@@ -66,25 +103,34 @@ class AcademicProgram {
                 let docs = await db.queryCollection("programs", {});
                 this._code = docs.length + 1;
                 // Get all matching occupations for program name
-                const keyword_url = "https://services.onetcenter.org/ws/online/search?keyword=" + this._title.toLowerCase();
-                let res = await ONETService.fetch(keyword_url);
+                const keyword_url = "https://services.onetcenter.org/ws/online/search?keyword=" + this._keyword;
+                let res = await ONETService.fetch(keyword_url, this._relevance_score);
+                if(this._soc_adds.length > 0) {
+                    res = res.concat(this._soc_adds);
+                }
                 await Utils.asyncForEach(res, async(career, index) => {
                     console.log("[" + (index + 1) + "/" + res.length + "] " + "Checking " + career.code + " | " + career.title + "...\r");
-                    // Build Career objects for all valid O*NET Codes
-                    let c = new Career(career.code);
-                    c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
-                    await c.retrieveCareerData();
-    
-                    if(c.hasOwnProperty("_salary")) {
-                        // Only save career growth and salary info in program data
-                        let obj = {
-                            _code: c._code,
-                            _title: c._title,
-                            _growth: c._growth,
-                            _salary: c._salary["NationalWagesList"][0]
+                    // Check for blacklisted codes
+                    let codePrefix = career.code.slice(0, 2);
+                    if(!this._soc_blacklist.includes(codePrefix)) {
+                        // Build Career objects for all valid O*NET Codes
+                        let c = new Career(career.code);
+                        c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
+                        await c.retrieveCareerData();
+        
+                        if(c.hasOwnProperty("_salary")) {
+                            // Only save career growth and salary info in program data
+                            let obj = {
+                                _code: c._code,
+                                _title: c._title,
+                                _growth: c._growth,
+                                _salary: c._salary["NationalWagesList"][0]
+                            }
+                            this._careers.push(obj)
                         }
-                        this._careers.push(obj)
-                    };
+                    } else {
+                        console.log("Skipping " + career.code + ". Blacklisted.");
+                    }
                 })
             } else {
                 console.log("\nProgram: " + this._title + " already exists in database.");
@@ -116,6 +162,12 @@ class AcademicProgram {
             // Aggregate salary and growth data from careers
             await this._aggregateData();
 
+            // Remove extraneous properties
+            delete this._soc_blacklist;
+            delete this._soc_adds;
+            delete this._keyword;
+            delete this._relevance_score;
+
             // Update program in database
             let writeOp = (program) => {
                 return [
@@ -140,6 +192,35 @@ class AcademicProgram {
             await c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
             await c.saveToDatabase();
         })
+    }
+
+    async updateCareers() {
+        this._careers = [];
+        // Get all matching occupations for program name
+        const keyword_url = "https://services.onetcenter.org/ws/online/search?keyword=" + this._title.toLowerCase();
+        let res = await ONETService.fetch(keyword_url);
+        await Utils.asyncForEach(res, async(career, index) => {
+            console.log("[" + (index + 1) + "/" + res.length + "] " + "Checking " + career.code + " | " + career.title + "...\r");
+            // Build Career objects for all valid O*NET Codes
+            let c = new Career(career.code);
+            c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
+            await c.retrieveCareerData();
+            if(c.hasOwnProperty("_salary")) {
+                // Only save career growth and salary info in program data
+                let obj = {
+                    _code: c._code,
+                    _title: c._title,
+                    _growth: c._growth,
+                    _salary: c._salary["NationalWagesList"][0]
+                }
+                this._careers.push(obj);
+            }
+        })
+        
+        // Filter any null data before aggregation
+        this._careers = this._careers.filter(career => career._salary !== null && career._salary !== undefined);
+        // Aggregate salary and growth data from careers
+        await this._aggregateData();
     }
 
     /**
@@ -204,7 +285,6 @@ class AcademicProgram {
     async _buildRelatedProgramData(code) {
         // Find all programs that have career code in _careers array.
         let relatedPrograms = await db.queryCollection("programs", { "_careers._code": code, "_title": { $ne: this._title } });
-
         // Include current program in related programs
         relatedPrograms.push(this);
 

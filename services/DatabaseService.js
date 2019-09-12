@@ -10,6 +10,17 @@ const MongoClient   = require("mongodb").MongoClient;
 const Utils         = require("../helpers/utils.js");
 
 const uri           = process.env.MONGODB_URI; // Heroku MongoDB add-on
+var DB;
+
+MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }, (err, client) => {
+    if(err) throw err;
+    
+    DB = client.db("heroku_zss53kwl");
+});
+process.on("SIGTERM", () => {
+    DB.close();
+})
+
 
 /**
  * Adds a single document to database collection.
@@ -31,14 +42,10 @@ const addToCollection = async(collectionName, data, writeOperation) => {
         if(Utils.isNull(data)) {
             throw new Error("Data contains null values. Database operation stopped.");
         }
-        let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-        let DB = await client.db("heroku_zss53kwl");
 
         let collection = await DB.collection(collectionName);
 
         let res = await collection.replaceOne(...writeOperation(data));
-
-        await client.close();
     } catch(error) {
         console.error(error.message);
         error.message = "Database error. Please contact server adminstrator for details."
@@ -60,9 +67,6 @@ const addToCollection = async(collectionName, data, writeOperation) => {
  * @return {void}
  */
 const addMultipleToCollection = async(collectionName, data, atomicOps) => {
-    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-    let DB = await client.db("heroku_zss53kwl");
-    console.log("\nSuccessfully connected to database.");
 
     let collection = await DB.collection(collectionName);
     console.log("Collection <" + collectionName + ">" + " opened.");
@@ -80,8 +84,6 @@ const addMultipleToCollection = async(collectionName, data, atomicOps) => {
         await collection.bulkWrite(atomic, { ordered: false });
         clearInterval(interval);
         process.stdout.write("Done.\n")
-        await client.close();
-
     } catch(error) {
         clearInterval(interval);
         process.stdout.write("\n")
@@ -102,17 +104,8 @@ const addMultipleToCollection = async(collectionName, data, atomicOps) => {
  * @return {void}
  */
 const queryCollection = async(collectionName, query) => {
-    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-    const DB = await client.db("heroku_zss53kwl");
-    // console.log("\nSuccessfully connected to database.");
-
     let collection = await DB.collection(collectionName);
-    // console.log("Collection <" + collectionName + "> opened");
-
-    // console.log("Searching documents for: " + JSON.stringify(query));
     let res = await collection.find(query).toArray();
-
-    await client.close();
     return res;
 }
 
@@ -128,19 +121,11 @@ const queryCollection = async(collectionName, query) => {
  * @return {void}
  */
 const deleteOne = async(collectionName, query) => {
-    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-    let DB = await client.db("heroku_zss53kwl");
-    console.log("\nSuccessfully connected to database.");
-
-
     let collection = await DB.collection(collectionName);
     console.log("Collection <" + collectionName + "> opened");
 
     let res = await collection.deleteOne(query);
     console.log("Document deleted.");
-
-    await client.close();
-    console.log("Database connection closed.");
 }
 
 /**
@@ -155,9 +140,6 @@ const deleteOne = async(collectionName, query) => {
  * @return {void}
  */
 const deleteMany = async(collectionName, query) => {
-    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-    let DB = await client.db("heroku_zss53kwl");
-    console.log("\nSuccessfully connected to database.");
 
     let collection = await DB.collection(collectionName);
     console.log("Collection <" + collectionName + "> opened");
@@ -166,8 +148,6 @@ const deleteMany = async(collectionName, query) => {
     if(res.result.ok) {
         console.log(res.result.n + " documents deleted.");
     }
-    await client.close();
-    console.log("Database connection closed.");
 }
 
 /**
@@ -182,18 +162,21 @@ const deleteMany = async(collectionName, query) => {
  * @return {void}
  */
 const updateMany = async(collectionName, query) => {
-    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-    const DB = await client.db("heroku_zss53kwl");
-    console.log("\nSuccessfully connected to database.");
 
     let collection = await DB.collection(collectionName);
     console.log("Collection <" + collectionName + "> opened");
 
     let res = await collection.updateMany(...query);
     console.log("Updated " + res.result.n + " documents.");
+}
 
-    await client.close();
-    console.log("Database connection closed.")
+const updateOne = async(collectionName, query) => {
+
+    let collection = await DB.collection(collectionName);
+    console.log("Collection <" + collectionName + "> opened");
+
+    let res = await collection.updateOne(...query);
+    console.log("Updated " + res.result.n + " documents.");
 }
 
 /** 
@@ -203,9 +186,6 @@ const updateMany = async(collectionName, query) => {
  * @return {void}
  */
 const cleanCollections = async() => {
-    let client = await MongoClient.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-
-    let DB = client.db("heroku_zss53kwl");
 
     let careersCollection = DB.collection("careers");
     let jobTrackingCollection = DB.collection("job_tracking");
@@ -233,8 +213,6 @@ const cleanCollections = async() => {
             }
         })
     }
-
-    await client.close();
 }
 
 module.exports = {
@@ -244,5 +222,6 @@ module.exports = {
     deleteMany,
     deleteOne,
     updateMany,
+    updateOne,
     cleanCollections
 }

@@ -15,7 +15,6 @@
 
 require("dotenv").config();
 const express = require('express');
-const fs = require("fs");
 
 /**
  * @type {object}
@@ -32,17 +31,18 @@ const AcademicProgram = require("../models/AcademicProgram.js");
 const DataExportService = require("../services/DataExportService.js");
 const Utils = require("../helpers/utils.js");
 
-const ACADEMIC_PROGRAMS = require('../misc/mesa_academic_programs_new.json');
+const SPREADSHEET = process.env.GOOGLE_ACADEMIC_PROGRAMS_SHEET;
 
 /**
  * FOR TESTING PURPOSES ONLY
  */
-Router.get("/test", (req, res) => {
+Router.get("/test", async(req, res) => {
     // pdf.create(html, options).toFile("./test.pdf", (err, r) => {
     //     if(err) return console.error(err);
     //     console.log(r);
     // })
-    res.sendStatus(200);
+    let data = await Utils.fetchGoogleSheet(SPREADSHEET);
+    res.status(200).send(data);
 
     // try {
     //     res.sendStatus(200);
@@ -127,10 +127,11 @@ Router.get("/update-job-tracking", async(req, res) => {
 Router.get("/build-programs", async(req, res) => {
     try {
         res.status(200).send("Request received. Check server logs for details. Note: This operation may take a long time.");
-        let programs = ACADEMIC_PROGRAMS;
+        let programs = await Utils.fetchGoogleSheet(SPREADSHEET);
         if(programs.length > 0) {
             let fn = async(cb, program) => {
-                let p = new AcademicProgram(program.title, program.degree_types);
+                let keyword = program._keywords.join(" ");
+                let p = new AcademicProgram(program._title, null, program._degree_types, program._relevance_score, program._soc_blacklist, program._soc_adds, keyword);
                 await p.retrieveAcademicProgramData();
                 cb();
             };

@@ -96,8 +96,7 @@ class Career {
         try {
             // Check if career data has already been generated. If it has, just return 
             // it instead of re-pulling data from ONET & CareerOneStop APIs.
-            let existingCareer = await db.queryCollection("careers", {code: this._code});
-
+            let existingCareer = await db.queryCollection("careers", {_code: this._code});
             // Career doesn't exist
             if(existingCareer.length === 0) {
                 // Get national career data
