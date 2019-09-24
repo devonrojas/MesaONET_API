@@ -124,6 +124,7 @@ class AcademicProgram {
                                 _code: c._code,
                                 _title: c._title,
                                 _growth: c._growth,
+                                _riasec_code: c._riasec_code,
                                 _salary: c._salary["NationalWagesList"][0]
                             }
                             this._careers.push(obj)
