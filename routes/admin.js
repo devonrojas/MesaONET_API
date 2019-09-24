@@ -15,6 +15,7 @@
 
 require("dotenv").config();
 const express = require('express');
+const auth = require("../helpers/auth");
 
 /**
  * @type {object}
@@ -32,6 +33,8 @@ const DataExportService = require("../services/DataExportService.js");
 const Utils = require("../helpers/utils.js");
 
 const SPREADSHEET = process.env.GOOGLE_ACADEMIC_PROGRAMS_SHEET;
+
+Router.use(auth);
 
 /**
  * FOR TESTING PURPOSES ONLY

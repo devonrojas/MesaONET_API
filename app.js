@@ -136,7 +136,8 @@ app.use("/docs", express.static("out"));
 app.post("/password", async(req, res) => {
     try {
         res.status(201).send("Processing...");
-        await bcrypt.hash(req.body.password, 10, async(err, hash) => {
+
+        await bcrypt.hash(pass, 10, async(err, hash) => {
             req.body.password = hash;
             const writeOp = (user) => {
                 return [
