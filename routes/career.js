@@ -66,41 +66,52 @@ Router.get("/", async(req, res) => {
 })
 
 Router.get("/:code", async(req, res) => {
+    Object.keys(req.query).map(key => {
+        if(req.query[key] === 'true') {
+            req.query[key] = true;
+        } else req.query[key] = false;
+    })
     let code = req.params.code;
     try {
         let career = await db.queryCollection("careers", {"_code": code});
-        let data = {
-            code: code,
-            title: career["_title"]
-        };
-        if(req.query.description) {
-            data["description"] = career["_description"];
+        if(career.length > 0) {
+            career = career[0];
+            let data = {
+                code: code,
+                title: career["_title"]
+            };
+            console.log(req.query);
+            if(req.query.description) {
+                data["description"] = career["_description"];
+            }
+            if(req.query.growth) {
+                data["growth"] = career["_growth"];
+            }
+            if(req.query.riasec_code) {
+                data["riasec_code"] = career["_riasec_code"];
+            }
+            if(req.query.technical_skills) {
+                data["technical_skills"] = career["_technical_skills"];
+            }
+            if(req.query.education) {
+                data["education"] = career["_education"];
+            }
+            if(req.query.tasks) {
+                data["tasks"] = career["_tasks"];
+            }
+            if(req.query.related_programs) {
+                data["related_programs"] = career["_related_programs"];
+            }
+            if(req.query.video) {
+                data["video"] = career["_video"];
+            }
+            if(req.query.salary) {
+                data["salary"] = career["_salary"];
+            }
+            res.status(200).json(data);
+        } else {
+            res.status(404).send("Career not found.");
         }
-        if(req.query.growth) {
-            data["growth"] = career["_growth"];
-        }
-        if(req.query.riasec_code) {
-            data["riasec_code"] = career["_riasec_code"];
-        }
-        if(req.query.technical_skills) {
-            data["technical_skills"] = career["_technical_skills"];
-        }
-        if(req.query.education) {
-            data["education"] = career["_education"];
-        }
-        if(req.query.tasks) {
-            data["tasks"] = career["_tasks"];
-        }
-        if(req.query.related_programs) {
-            data["related_programs"] = career["_related_programs"];
-        }
-        if(req.query.video) {
-            data["video"] = career["_video"];
-        }
-        if(req.query.salary) {
-            data["salary"] = career["_salary"];
-        }
-        res.status(200).json(data);
     } catch(error) {
         console.error(error);
         res.status(500).send(error.message);
