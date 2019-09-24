@@ -13,6 +13,7 @@
 
 require("dotenv").config();
 const express = require('express');
+const rp = require("request-promise");
 
 /**
  * @type {object}
@@ -157,6 +158,45 @@ Router.post("/", async(req, res) => {
             await db.cleanCollections();
 
             console.log("Program successfully created.");
+
+            try {
+                // Update search engine db
+                console.log("Updating search engine...")
+                const SEARCH_ENGINE_API = "https://polar-wave-14549.herokuapp.com/admin/";
+                let options = {
+                    uri: SEARCH_ENGINE_API + "program/" + p["_code"],
+                    method: "POST",
+                    body: {
+                        code: p["_code"],
+                        name: p["_title"]
+                    }
+                }
+                await rp(options);
+                console.log("Program created in search engine.")
+                await Utils.asyncForEach(p["_careers"], async(career) => {
+                    try {
+                        options["uri"] = SEARCH_ENGINE_API + "career/" + career["_code"];
+                        options["body"] = career;
+                        await rp(options);
+                    } catch(error) {
+                        // Career exists in search engine db already
+                        if(error.statusCode === 400) {
+                            console.error(error.err);
+                        } else {
+                            console.error(error);
+                        }
+                    }
+                    console.log("Career created in search engine.")
+                })
+            console.log("Search engine updated.")
+            } catch(error) {
+                // Program exists in search engine db already
+                if(error.statusCode === 400) {
+                    console.error(error.err);
+                } else {
+                    console.error(error);
+                }
+            }
 
         } // End existing program check
         else {
