@@ -23,7 +23,6 @@ const ONET_OPTIONS = {
 // Search results threshold
 const RELEVANCE_SCORE_CAP = 50;
 
-
 /**
  * Retrieves technical skills associated with an O*NET
  * Occupation code.
@@ -52,6 +51,33 @@ const getCareerTechnicalSkills = async(code) => {
 
             return arr;
         } else return null;
+    } catch(error) {
+        console.error(error.message);
+        return null;
+    }
+}
+
+/**
+ * Retrieves RIASEC code associated with an O*NET
+ * Occupation code.
+ * 
+ * @name getCareerTechnicalSkills
+ * @memberof module:services/ONETService
+ * @function
+ * 
+ * @param {string} code O*NET code to query.
+ * @return {null|String} RIASEC code.
+ */
+const getRIASECCode = async(code) => {
+    const interestsUrl = "https://services.onetcenter.org/ws/online/occupations/" + code + "/summary/interests";
+    try {
+        let data = await rp(interestsUrl, ONET_OPTIONS);
+        if(data.hasOwnProperty("high_point_code")) {
+            let RIASEC = data["high_point_code"];
+            return RIASEC;
+        } else {
+            return null;
+        }
     } catch(error) {
         console.error(error.message);
         return null;
@@ -93,4 +119,4 @@ const fetch = async(url, relevance_score) => {
     }
 }
 
-module.exports = { fetch, getCareerTechnicalSkills }
+module.exports = { fetch, getCareerTechnicalSkills, getRIASECCode }

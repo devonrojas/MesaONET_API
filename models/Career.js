@@ -103,6 +103,7 @@ class Career {
                 let career_one_stop_data = await CareerOneStopService.fetch(this._code);
 
                 this._technical_skills = await ONETService.getCareerTechnicalSkills(this._code);
+                this._riasec_code = await ONETService.getRIASECCode(this._code);
                 this._growth = +(await db.queryCollection("growth_data", {soc_code: this._code.slice(0, this._code.indexOf("."))}))[0]['growth_pct'];
                 this._tasks = this._buildTasks(career_one_stop_data['Tasks']);
                 this._salary = this._buildSalary(career_one_stop_data['Wages']);
