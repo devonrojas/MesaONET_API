@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/Salary.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/Salary.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @module models/Salary
+ * @author Devon Rojas
+ */
+
+/**
+ * Class representing salary percentile distributions per each Career.
+ */
+class Salary {
+    /**
+     * Creates a salary.
+     * @param {number} pct10    10th Percentile salary value.
+     * @param {number} pct25    25th Percentile salary value.
+     * @param {number} median   Median salary value.
+     * @param {number} pct75    75th Percentile salary value.
+     * @param {number} pct90    90th Percentile salary value.
+     */
+    constructor(pct10, pct25, median, pct75, pct90) {
+        Object.keys(arguments).forEach(key => {
+            if(isNaN(arguments[key])) {
+                if(typeof arguments[key] === "string") {
+                    if(arguments[key].indexOf("+") === -1) {
+                        throw new TypeError("Salary object constructor encountered an unhandled value.");
+                    } else {
+                        arguments[key] = arguments[key].replace("+", "").replace(",", "");
+                    }
+                } else if(typeof arguments[key] !== 'number') {
+                    throw new TypeError("Salary object constructor requires number values. Value passed in: " + arguments[key])
+                }
+            }
+            arguments[key] = +arguments[key];
+        })
+        /** @private */
+        this._Pct10  = arguments[0] || 0;
+        /** @private */
+        this._Pct25  = arguments[1] || arguments[0];
+        /** @private */
+        this._Median = arguments[2] || arguments[1] || arguments[0];
+        /** @private */
+        this._Pct75  = arguments[3] || arguments[2] || arguments[1] || arguments[0];
+        /** @private */
+        this._Pct90  = arguments[4] || arguments[3] || arguments[2] || arguments[1] || arguments[0];
+    }
+
+    /** 
+     * Get the 10th Percentile salary value.
+     * @return {number} 10th percentile salary.
+     */
+    getPct10() {
+        return this._Pct10;
+    }
+
+    /** 
+     * Get the 25th Percentile salary value.
+     * @return {number} 25th percentile salary.
+     */
+    getPct25() {
+        return this._Pct25;
+    }
+
+    /** 
+     * Get the 50th Percentile salary value.
+     * @return {number} Median salary.
+     */
+    getMedian() {
+        return this._Median;
+    }
+
+    /** 
+     * Get the 75th Percentile salary value.
+     * @return {number} 75th percentile salary.
+     */
+    getPct75() {
+        return this._Pct75;
+    }
+
+    /** 
+     * Get the 90th Percentile salary value.
+     * @return {number} 90th percentile salary.
+     */
+    getPct90() {
+        return this._Pct90;
+    }
+
+    /** 
+     * Sets the 10th Percentile salary value.
+     * @param {number} val The value to set.
+     */
+    setPct10(val) {
+        if(isNaN(val)) {
+            throw new TypeError("Value must be a number.");
+        }
+        this._Pct10 = val;
+    }
+
+    /** 
+     * Sets the 25th Percentile salary value.
+     * @param {number} val The value to set.
+     */
+    setPct25(val) {
+        if(isNaN(val)) {
+            throw new TypeError("Value must be a number.");
+        }
+        this._Pct25 = val;
+    }
+
+    /** 
+     * Sets the 50th Percentile salary value.
+     * @param {number} val The value to set.
+     */
+    setMedian(val) {
+        if(isNaN(val)) {
+            throw new TypeError("Value must be a number.");
+        }
+        this._Median = val;
+    }
+
+    /**
+     * Sets the 75th Percentile salary value.
+     * @param {number} val The value to set.
+     */
+    setPct75(val) {
+        if(isNaN(val)) {
+            throw new TypeError("Value must be a number.");
+        }
+        this._Pct75 = val;
+    }
+
+    /** 
+     * Sets the 90th Percentile salary value.
+     * @param {number} val The value to set.
+     */
+    setPct90(val) {
+        if(isNaN(val)) {
+            throw new TypeError("Value must be a number.");
+        }
+        this._Pct90 = val;
+    }
+}
+
+module.exports = Salary;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CareerEducationAPI.html">CareerEducationAPI</a></li><li><a href="module-helpers_Utils.html">helpers/Utils</a></li><li><a href="module-models_AcademicProgram.html">models/AcademicProgram</a></li><li><a href="module-models_Career.html">models/Career</a></li><li><a href="module-models_JobTracker.html">models/JobTracker</a></li><li><a href="module-models_Salary.html">models/Salary</a></li><li><a href="module-models_Throttler.html">models/Throttler</a></li><li><a href="module-routes_admin.html">routes/admin</a></li><li><a href="module-routes_career.html">routes/career</a></li><li><a href="module-routes_program.html">routes/program</a></li><li><a href="module-services_CareerOneStopService.html">services/CareerOneStopService</a></li><li><a href="module-services_DatabaseService.html">services/DatabaseService</a></li><li><a href="module-services_DataExportService.html">services/DataExportService</a></li><li><a href="module-services_GoogleMapsService.html">services/GoogleMapsService</a></li><li><a href="module-services_ONETService.html">services/ONETService</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-CareerEducationAPI-app.html">app</a></li><li><a href="module-routes_admin-adminRouter.html">adminRouter</a></li><li><a href="module-routes_career-careerRouter.html">careerRouter</a></li><li><a href="module-routes_program-programRouter.html">programRouter</a></li></ul><h3>Classes</h3><ul><li><a href="module-helpers_Utils-Utils.html">Utils</a></li><li><a href="module-models_AcademicProgram-AcademicProgram.html">AcademicProgram</a></li><li><a href="module-models_Career-Career.html">Career</a></li><li><a href="module-models_JobTracker-AreaRadius.html">AreaRadius</a></li><li><a href="module-models_JobTracker-CountyArea.html">CountyArea</a></li><li><a href="module-models_JobTracker-JobRecord.html">JobRecord</a></li><li><a href="module-models_JobTracker-JobTracker.html">JobTracker</a></li><li><a href="module-models_JobTracker-PrimitiveArea.html">PrimitiveArea</a></li><li><a href="module-models_Salary-Salary.html">Salary</a></li><li><a href="module-models_Throttler-Throttler.html">Throttler</a></li><li><a href="module-services_DataExportService-DataExportService.html">DataExportService</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Sep 26 2019 12:46:23 GMT-0700 (Pacific Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
