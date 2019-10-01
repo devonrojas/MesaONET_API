@@ -60,6 +60,15 @@ const getCounty = async(location) => {
     return res1[0];
 }
 
+/**
+ * Retrieves state component from a keyword.
+ * @name getState
+ * @function
+ * 
+ * @param {string} location Location to reverse lookup
+ * 
+ * @return {object} State location data
+ */
 const getState = async(location) => {
     let res = await _fetch(location);
     let res1 = res

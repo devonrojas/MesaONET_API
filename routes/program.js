@@ -4,10 +4,11 @@
  * @author Devon Rojas
  * 
  * @requires {@link https://www.npmjs.com/package/express| express}
+ * @requires {@link https://www.npmjs.com/package/request-promise|request-promsie}
  * 
  * @requires services/DatabaseService
- * @requires services/DataExportService
  * @requires models/AcademicProgram
+ * @requires models/Career
  * @requires helpers/Utils
  */
 
@@ -26,8 +27,62 @@ const Router = express.Router();
 const db = require("../services/DatabaseService.js");
 const AcademicProgram = require("../models/AcademicProgram.js");
 const Career = require("../models/Career.js");
-
 const Utils = require("../helpers/utils.js");
+
+/**
+ * Retrieves multiple [AcademicPrograms]{@link module:models/AcademicProgram} from
+ * database and sends back all of their program data.
+ * 
+ * @name GET/bulk
+ * @function
+ * @memberof module:routes/program~programRouter
+ * 
+ * @see {@link module:services/DatabaseService|DatabaseService}
+ * @see {@link module:helpers/Utils|Utils}
+ * 
+ * @param {Array} codes An array of program codes to fetch information for.
+ * @example
+ * // GET/program/bulk?codes=1&codes=2&...
+ *  
+ */
+Router.get("/bulk", async(req, res) => {
+    try {
+        let codes;
+        // Make sure appropriate query params are sent over
+        if(req.query.codes) {
+            if(Array.isArray(req.query.codes)) {
+                codes = req.query.codes;
+            } else {
+                throw new Error("[codes] query param must be an array.");
+            }
+        } else {
+            throw new Error("No program codes supplied. Please try again.");
+        }
+        let pArr = [];
+        // Loop through each code and retrieve program data
+        await Utils.asyncForEach(codes, async(code) => {
+            if(isNaN(code)) {
+                throw new Error("Program code must be a number.");
+            }
+            code = +code;
+            let program = await db.queryCollection("programs", {"_code": code});
+            if(program.length > 0) {
+                let p = Object.assign(new AcademicProgram(""), program[0]);
+                pArr.push(p);
+            } else {
+                throw new Error("No program found. Please try again.")
+            }
+        })
+        res.status(200).send(pArr);
+    } catch(error) {
+        console.error(error.message);
+        if(error.statusCode) {
+            res.status(error.statusCode).send(error.message);
+        } else {
+            res.status(404).send(error.message);
+        }
+    }
+})
 
 /**
  * Adds a new [AcademicProgram]{@link module:models/AcademicProgram} to database.

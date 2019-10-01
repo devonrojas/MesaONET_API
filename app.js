@@ -6,6 +6,7 @@
  * @requires {@link https://www.npmjs.com/package/cors| cors}
  * @requires {@link https://nodejs.org/api/fs.html| fs}
  * @requires {@link https://www.npmjs.com/package/body-parser| body-parser}
+ * @requires {@link https://www.npmjs.com/package/bcrypt|bcrypt}
  * 
  * @requires routes/program
  * @requires routes/career
@@ -71,7 +72,7 @@ const app = express();
 
 const corsOptions = {
     origin: ['http://localhost:5500/', 'https://peaceful-taiga-34406.herokuapp.com/'],
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST', 'DELETE', 'PUT']
 }
 
 // Request Middleware
@@ -79,7 +80,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors(corsOptions));
 app.use(logger);
-
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     next();

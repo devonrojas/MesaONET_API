@@ -65,6 +65,11 @@ Router.get("/", async(req, res) => {
     }
 })
 
+/**
+ * @name GET/:code
+ * @function
+ * @memberof module:routes/career~careerRouter
+ */
 Router.get("/:code", async(req, res) => {
     Object.keys(req.query).map(key => {
         if(req.query[key] === 'true') {
@@ -80,7 +85,6 @@ Router.get("/:code", async(req, res) => {
                 code: code,
                 title: career["_title"]
             };
-            console.log(req.query);
             if(req.query.description) {
                 data["description"] = career["_description"];
             }

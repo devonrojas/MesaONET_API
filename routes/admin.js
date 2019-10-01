@@ -10,6 +10,7 @@
  * @requires services/DataExportService
  * @requires models/JobTracker
  * @requires models/Throttler
+ * @requires models/AcademicProgram
  * @requires helpers/Utils
  */
 

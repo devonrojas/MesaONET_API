@@ -156,8 +156,8 @@ const deleteMany = async(collectionName, query) => {
  * @name updateMany
  * @function
  * 
- * @param {string}      collectionName  Collection in database to update documents in.
- * @param {Object}      query           One or more query conditions to specify update operation.
+ * @param {string}  collectionName  Collection in database to update documents in.
+ * @param {Object}  query           One or more query conditions to specify update operation.
  * 
  * @return {void}
  */
@@ -170,6 +170,12 @@ const updateMany = async(collectionName, query) => {
     console.log("Updated " + res.result.n + " documents.");
 }
 
+/**
+ * Updates a single document in a collection.
+ * 
+ * @param {string}  collectionName  Collection in database to update documents in.
+ * @param {Object}  query           One of more query conditions to specify update operation.
+ */
 const updateOne = async(collectionName, query) => {
 
     let collection = await DB.collection(collectionName);
@@ -180,6 +186,9 @@ const updateOne = async(collectionName, query) => {
 }
 
 /** 
+ * Scans both the *careers* and *job_tracking* collections in the database and 
+ * removes any careers that do not appear in both collections.
+ * 
  * @name cleanCollections
  * @function
  * 
