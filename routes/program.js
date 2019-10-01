@@ -282,13 +282,27 @@ Router.post("/", async(req, res) => {
  */
 Router.get("/", async(req, res) => {
     try {
+        Object.keys(req.query).map(key => {
+            if(req.query[key] === 'true') {
+                req.query[key] = true;
+            } else req.query[key] = false;
+        })
         // Empty query to return all documents in programs collection
         let programs = await db.queryCollection("programs", {});
+
         programs = programs.map(program => {
-            return {
+            return req.query.detail ? {
                 title: program._title,
                 code: program._code
-            }
+            } : { 
+                title: program._title, 
+                code: program._code, 
+                careers: program._careers, 
+                degree_types: program._degree_types, 
+                aggregate_salary: program._aggregate_salary, 
+                url: program.url, 
+                aggregate_growth: program._aggregate_growth 
+            };
         }).sort((a, b) => {
             const titleA = a.title.toLowerCase();
             const titleB = b.title.toLowerCase();
