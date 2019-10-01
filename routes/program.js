@@ -287,11 +287,12 @@ Router.get("/", async(req, res) => {
                 req.query[key] = true;
             } else req.query[key] = false;
         })
+        console.log(req.query);
         // Empty query to return all documents in programs collection
         let programs = await db.queryCollection("programs", {});
 
         programs = programs.map(program => {
-            return req.query.detail ? {
+            return !req.query.detail ? {
                 title: program._title,
                 code: program._code
             } : { 
