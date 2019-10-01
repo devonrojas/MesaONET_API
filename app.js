@@ -71,13 +71,8 @@ const logger = (req, res, next) => {
 const app = express();
 
 const corsOptions = {
-<<<<<<< HEAD
-    origin: ['http://localhost:5500/', 'https://peaceful-taiga-34406.herokuapp.com/'],
+    origin: "*",
     methods: ['GET', 'POST', 'DELETE', 'PUT']
-=======
-    origin: ['http://localhost:5500/', 'https://peaceful-taiga-34406.herokuapp.com/', 'http://osprey.sdmesa.edu/'],
-    methods: ['GET', 'POST']
->>>>>>> d99dc8747d112d5be272076f88501a371a451751
 }
 
 // Request Middleware
@@ -85,10 +80,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors(corsOptions));
 app.use(logger);
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    next();
-})
 
 // Routing middleware
 /**
