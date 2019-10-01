@@ -70,7 +70,7 @@ const logger = (req, res, next) => {
 const app = express();
 
 const corsOptions = {
-    origin: ['http://localhost:5500/', 'https://peaceful-taiga-34406.herokuapp.com/'],
+    origin: ['http://localhost:5500/', 'https://peaceful-taiga-34406.herokuapp.com/', 'http://osprey.sdmesa.edu/'],
     methods: ['GET', 'POST']
 }
 
