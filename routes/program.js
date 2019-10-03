@@ -294,15 +294,15 @@ Router.get("/", async(req, res) => {
         programs = programs.map(program => {
             return !req.query.detail ? {
                 title: program.title,
-                code: program._code
+                code: program.code
             } : { 
                 title: program.title, 
-                code: program._code, 
-                careers: program._careers, 
+                code: program.code, 
+                careers: program.careers, 
                 degree_types: program.degree_types, 
-                aggregate_salary: program._aggregate_salary, 
+                aggregate_salary: program.aggregate_salary, 
                 url: program.url, 
-                aggregate_growth: program._aggregate_growth 
+                aggregate_growth: program.aggregate_growth 
             };
         }).sort((a, b) => {
             const titleA = a.title.toLowerCase();
