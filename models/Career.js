@@ -25,25 +25,25 @@ class Career {
      */
     constructor(code) {
         /** @private */
-        this._technical_skills;
+        this.technical_skills;
         /** @private */
-        this._growth;
+        this.growth;
         /** @private */
-        this._tasks;
+        this.tasks;
         /** @private */
-        this._title;
+        this.title;
         /** @private */
-        this._salary;
+        this.salary;
         /** @private */
-        this._description;
+        this.description;
         /** @private */
-        this._education;
+        this.education;
         /** @private */
-        this._video;
+        this.video;
         /** @private */
-        this._code = code;
+        this.code = code;
         /** @private */
-        this._related_programs = [];
+        this.related_programs = [];
     }
 
     /**
@@ -52,7 +52,7 @@ class Career {
      */
     setRelatedPrograms(arr) {
         if(Array.isArray(arr)) {
-            this._related_programs = arr;
+            this.related_programs = arr;
         } else {
             throw new TypeError("Argument must be an array.");
         }
@@ -63,7 +63,7 @@ class Career {
      * @return {Array} Array of related programs.
      */
     getRelatedPrograms() {
-        return this._related_programs;
+        return this.related_programs;
     }
 
     /**
@@ -74,8 +74,8 @@ class Career {
      * @param {string}  parth        A URL path pointing to a Mesa Academic Program page
      */
     addRelatedProgram(program) {
-        if(this._related_programs.map(p => p.title).indexOf(program.title) === -1) {
-            this._related_programs.push(program);
+        if(this.related_programs.map(p => p.code).indexOf(program.code) === -1) {
+            this.related_programs.push(program);
         } else {
             console.log(program.title + " is already in related programs array.");
         }
@@ -96,31 +96,31 @@ class Career {
         try {
             // Check if career data has already been generated. If it has, just return 
             // it instead of re-pulling data from ONET & CareerOneStop APIs.
-            let existingCareer = await db.queryCollection("careers", {_code: this._code});
+            let existingCareer = await db.queryCollection("careers", {code: this.code});
             // Career doesn't exist
             if(existingCareer.length === 0) {
                 // Get national career data
-                let career_one_stop_data = await CareerOneStopService.fetch(this._code);
+                let career_one_stop_data = await CareerOneStopService.fetch(this.code);
 
-                this._technical_skills = await ONETService.getCareerTechnicalSkills(this._code);
-                this._riasec_code = await ONETService.getRIASECCode(this._code);
-                this._growth = +(await db.queryCollection("growth_data", {soc_code: this._code.slice(0, this._code.indexOf("."))}))[0]['growth_pct'];
-                this._tasks = this._buildTasks(career_one_stop_data['Tasks']);
-                this._salary = this._buildSalary(career_one_stop_data['Wages']);
-                this._title = career_one_stop_data['OnetTitle'];
-                this._description = career_one_stop_data['OnetDescription'];
-                this._education = career_one_stop_data['EducationTraining']['EducationType'];
-                this._video = career_one_stop_data['COSVideoURL'];
+                this.technical_skills = await ONETService.getCareerTechnicalSkills(this.code);
+                this.riasec_code = await ONETService.getRIASECCode(this.code);
+                this.growth = +(await db.queryCollection("growth_data", {soc_code: this.code.slice(0, this.code.indexOf("."))}))[0]['growth_pct'];
+                this.tasks = this._buildTasks(career_one_stop_data['Tasks']);
+                this.salary = this._buildSalary(career_one_stop_data['Wages']);
+                this.title = career_one_stop_data['OnetTitle'];
+                this.description = career_one_stop_data['OnetDescription'];
+                this.education = career_one_stop_data['EducationTraining']['EducationType'];
+                this.video = career_one_stop_data['COSVideoURL'];
 
                 await this.saveToDatabase();
 
                 // Create a job tracking record for the new career
-                let job_tracker = new JobTracker(this._code);
+                let job_tracker = new JobTracker(this.code);
                 await job_tracker.retrieveData();
                 const writeOperation = (data) => [
-                    { "_code": data["_code"] },
+                    { "code": data["code"] },
                     {
-                        "_code": data["_code"],
+                        "code": data["code"],
                         "_areas": data.getAreas(),
                         "lastUpdated": Date.now()
                     },
@@ -131,7 +131,7 @@ class Career {
             }
             // Career exists
             else {
-                console.log("Occupation: " + this._code + " exists in database already.");
+                console.log("Occupation: " + this.code + " exists in database already.");
                 let obj = existingCareer[0];
                 if(obj.hasOwnProperty("lastUpdated")) {
                     delete obj["lastUpdated"];
@@ -140,7 +140,7 @@ class Career {
                 Object.assign(this, obj);
             }
         } catch(error) {
-            console.log(error.message + " | Career code: " + this._code);
+            console.log(error.message + " | Career code: " + this.code);
         }
     }
 
@@ -154,16 +154,16 @@ class Career {
      */
     async validateCareer() {
         const keys_to_validate = [
-            "_code", 
-            "_related_programs", 
-            "_technical_skills", 
-            "_growth", 
-            "_tasks", 
-            "_salary", 
-            "_title", 
-            "_description", 
-            "_education", 
-            "_video"
+            "code", 
+            "related_programs", 
+            "technical_skills", 
+            "growth", 
+            "tasks", 
+            "salary", 
+            "title", 
+            "description", 
+            "education", 
+            "video"
         ];
         console.log(this);
 
@@ -196,7 +196,7 @@ class Career {
             // Add career data to database
             let writeOp = (career) => {
                 return [
-                    { _code: career['_code'] },
+                    { code: career['code'] },
                     Object.assign({}, {...career, lastUpdated: Date.now()}),
                     { upsert: true}
                 ]
@@ -216,8 +216,8 @@ class Career {
      * @param {string} location Location to search
      */
     async updateSalary(location) {
-        let career_one_stop_data = await CareerOneStopService.fetch(this._code, location);
-        this._salary = this._buildSalary(career_one_stop_data['Wages']);
+        let career_one_stop_data = await CareerOneStopService.fetch(this.code, location);
+        this.salary = this._buildSalary(career_one_stop_data['Wages']);
     }
 
     /**

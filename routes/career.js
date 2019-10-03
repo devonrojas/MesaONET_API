@@ -78,39 +78,39 @@ Router.get("/:code", async(req, res) => {
     })
     let code = req.params.code;
     try {
-        let career = await db.queryCollection("careers", {"_code": code});
+        let career = await db.queryCollection("careers", {"code": code});
         if(career.length > 0) {
             career = career[0];
             let data = {
                 code: code,
-                title: career["_title"]
+                title: career["title"]
             };
             if(req.query.description) {
-                data["description"] = career["_description"];
+                data["description"] = career["description"];
             }
             if(req.query.growth) {
-                data["growth"] = career["_growth"];
+                data["growth"] = career["growth"];
             }
             if(req.query.riasec_code) {
-                data["riasec_code"] = career["_riasec_code"];
+                data["riasec_code"] = career["riasec_code"];
             }
             if(req.query.technical_skills) {
-                data["technical_skills"] = career["_technical_skills"];
+                data["technical_skills"] = career["technical_skills"];
             }
             if(req.query.education) {
-                data["education"] = career["_education"];
+                data["education"] = career["education"];
             }
             if(req.query.tasks) {
-                data["tasks"] = career["_tasks"];
+                data["tasks"] = career["tasks"];
             }
             if(req.query.related_programs) {
-                data["related_programs"] = career["_related_programs"];
+                data["related_programs"] = career["related_programs"];
             }
             if(req.query.video) {
-                data["video"] = career["_video"];
+                data["video"] = career["video"];
             }
             if(req.query.salary) {
-                data["salary"] = career["_salary"];
+                data["salary"] = career["salary"];
             }
             res.status(200).json(data);
         } else {
@@ -151,7 +151,7 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
 
     console.log("Searching for career...");
     try {
-        let career = await db.queryCollection("careers", {"_code": code})
+        let career = await db.queryCollection("careers", {"code": code})
         if (career.length > 0) {
             console.log("Career found!");
             career = Object.assign(new Career(code), career[0]);
@@ -220,7 +220,7 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                 }
             }
 
-            career["_job_data"] = jobData[0] || jobData;
+            career["job_data"] = jobData[0] || jobData;
             // Pull location-specific salary data
             await career.updateSalary(location);
 

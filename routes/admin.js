@@ -5,6 +5,7 @@
  * @author Devon Rojas
  * 
  * @requires {@link https://www.npmjs.com/package/express| express}
+ * @requires {@link https://www.npmjs.com/package/request-promise|request-promise}
  * 
  * @requires services/DatabaseService
  * @requires services/DataExportService
@@ -16,6 +17,7 @@
 
 require("dotenv").config();
 const express = require('express');
+const rp = require("request-promise");
 const auth = require("../helpers/auth");
 
 /**
@@ -134,8 +136,8 @@ Router.get("/build-programs", async(req, res) => {
         let programs = await Utils.fetchGoogleSheet(SPREADSHEET);
         if(programs.length > 0) {
             let fn = async(cb, program) => {
-                let keyword = program._keywords.join(" ");
-                let p = new AcademicProgram(program._title, null, program._degree_types, program._relevance_score, program._soc_blacklist, program._soc_adds, keyword);
+                let keyword = program.keywords.join(" ");
+                let p = new AcademicProgram(program.title, null, program.degree_types, program.relevance_score, program.soc_blacklist, program.soc_adds, keyword);
                 await p.retrieveAcademicProgramData();
                 cb();
             };
@@ -144,6 +146,43 @@ Router.get("/build-programs", async(req, res) => {
 
         // Clean careers and job-tracking data
         await db.cleanCollections();
+
+        // Update Mesa Search Engine Database
+        let programsToCheck = await db.queryCollection("programs", {});
+        let careersToCheck = await db.queryCollection("careers", {});
+
+        await Utils.asyncForEach(programsToCheck, async(program) => {
+            program = Object.keys(program).map((key) => {
+                let k = key.replace("_", "");
+                program[k] = program[key];
+                delete program[key];
+            })
+
+            let options = {
+                uri: "https://polar-wave-14549.herokuapp.com/" + "program/" + program["code"],
+                method: "POST",
+                body: program,
+                json: true
+            }
+            await rp(options);
+        })
+
+        await Utils.asyncForEach(careersToCheck, async(career) => {
+            career = Object.keys(career).map(key => {
+                let k = key.replace("_", "");
+                career[k] = career[key];
+                delete career[key];
+            })
+
+            let options = {
+                uri: "https://polar-wave-14549.herokuapp.com/" + "career/" + career["code"],
+                method: "POST",
+                body: career,
+                json: true
+            }
+
+            await rp(options);
+        })
 
     } catch(error) {
         console.error(error);

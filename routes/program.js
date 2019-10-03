@@ -65,7 +65,7 @@ Router.get("/bulk", async(req, res) => {
                 throw new Error("Program code must be a number.");
             }
             code = +code;
-            let program = await db.queryCollection("programs", {"_code": code});
+            let program = await db.queryCollection("programs", {"code": code});
             if(program.length > 0) {
                 let p = Object.assign(new AcademicProgram(""), program[0]);
                 pArr.push(p);
@@ -219,18 +219,18 @@ Router.post("/", async(req, res) => {
                 console.log("Updating search engine...")
                 const SEARCH_ENGINE_API = "https://polar-wave-14549.herokuapp.com/admin/";
                 let options = {
-                    uri: SEARCH_ENGINE_API + "program/" + p["_code"],
+                    uri: SEARCH_ENGINE_API + "program/" + p["code"],
                     method: "POST",
                     body: {
-                        code: p["_code"],
-                        name: p["_title"]
+                        code: p["code"],
+                        name: p["title"]
                     }
                 }
                 await rp(options);
                 console.log("Program created in search engine.")
                 await Utils.asyncForEach(p["_careers"], async(career) => {
                     try {
-                        options["uri"] = SEARCH_ENGINE_API + "career/" + career["_code"];
+                        options["uri"] = SEARCH_ENGINE_API + "career/" + career["code"];
                         options["body"] = career;
                         await rp(options);
                     } catch(error) {
@@ -293,13 +293,13 @@ Router.get("/", async(req, res) => {
 
         programs = programs.map(program => {
             return !req.query.detail ? {
-                title: program._title,
+                title: program.title,
                 code: program._code
             } : { 
-                title: program._title, 
+                title: program.title, 
                 code: program._code, 
                 careers: program._careers, 
-                degree_types: program._degree_types, 
+                degree_types: program.degree_types, 
                 aggregate_salary: program._aggregate_salary, 
                 url: program.url, 
                 aggregate_growth: program._aggregate_growth 
@@ -343,7 +343,7 @@ Router.get("/:code", async(req, res) => {
             throw new Error("Program code must be a number.");
         }
         code = +code;
-        let program = await db.queryCollection("programs", {"_code": code});
+        let program = await db.queryCollection("programs", {"code": code});
         if(program.length > 0) {
             let p = Object.assign(new AcademicProgram(""), program[0]);
             await p.checkRelatedPrograms();
@@ -383,14 +383,14 @@ Router.put("/:code", async(req, res) => {
         let validObj = data && Object.keys(data).every(key => KEYS.includes(key));
         if(validObj) {
             try {
-                let p = await db.queryCollection("programs", {"_code": +code });
+                let p = await db.queryCollection("programs", {"code": +code });
                 if(p.length > 0) {
                     p = Object.assign(new AcademicProgram(), p[0]);
                     if(data["degree_types"]) {
-                        p["_degree_types"] = data["degree_types"];
+                        p["degree_types"] = data["degree_types"];
                     }
                     if(data["title"]) {
-                        p["_title"] = data["title"];
+                        p["title"] = data["title"];
                         await p.updateCareers();
                     }
                 } else {
@@ -398,7 +398,7 @@ Router.put("/:code", async(req, res) => {
                 }
     
                 let update = [
-                    { "_code": +code },
+                    { "code": +code },
                     { $set: { ...p }},
                     { upsert: true }
                 ]
@@ -430,10 +430,10 @@ Router.delete("/:code", async(req, res) => {
     let code = req.params.code;
     if(code) {
         try {
-            let p = await db.queryCollection("programs", {"_code": +code});
+            let p = await db.queryCollection("programs", {"code": +code});
             if(p.length > 0) {
-                await db.deleteOne("programs", {"_code": code});
-                res.status(200).send(p[0]["_title"] + " program deleted.");
+                await db.deleteOne("programs", {"code": code});
+                res.status(200).send(p[0]["title"] + " program deleted.");
             } else {
                 res.status(404).send("No program found for code.");
             }
@@ -460,11 +460,11 @@ Router.post("/:code/career/:soc_code", async(req, res) => {
     let soc_code = req.params.soc_code;
 
     try {
-        let p = await db.queryCollection("programs", {"_code": +code});
+        let p = await db.queryCollection("programs", {"code": +code});
         if(p.length > 0) {
             p = Object.assign(new AcademicProgram(), p[0]);
             if(!p.hasCareer(soc_code)) {
-                let c = await db.queryCollection("careers", {"_code": soc_code });
+                let c = await db.queryCollection("careers", {"code": soc_code });
                 if(c.length > 0) {
                     c = Object.assign(new Career(soc_code), c[0]);
                 } else {
@@ -475,20 +475,20 @@ Router.post("/:code/career/:soc_code", async(req, res) => {
                 }
                 let obj = {
                     _code: c._code,
-                    _title: c._title,
+                    title: c.title,
                     _growth: c._growth,
                     _salary: c._salary["NationalWagesList"][0]
                 }
                 await p.addCareer(obj);
                 let update = [
-                    { "_code": +code },
+                    { "code": +code },
                     { $set: { ...p }},
                     { upsert: true }
                 ]
                 await db.updateOne("programs", update);
-                res.status(201).send(soc_code + " successfully added to " + p["_title"] + " program.");
+                res.status(201).send(soc_code + " successfully added to " + p["title"] + " program.");
             } else {
-                res.status(409).send(p._title + " program already contains code " + soc_code + ".");
+                res.status(409).send(p.title + " program already contains code " + soc_code + ".");
             }
         } else {
             res.status(404).send("No program found. Please try again.")
@@ -513,20 +513,20 @@ Router.delete("/:code/career/:soc_code", async(req, res) => {
     let soc_code = req.params.soc_code;
     if(code) {
         try {
-            let p = await db.queryCollection("programs", {"_code": +code});
+            let p = await db.queryCollection("programs", {"code": +code});
             if(p.length > 0) {
                 p = Object.assign(new AcademicProgram(), p[0]);
                 if(p.hasCareer(soc_code)) {
                     await p.removeCareer(soc_code);
                     let update = [
-                        { "_code": +code },
+                        { "code": +code },
                         { $set: { ...p }},
                         { upsert: true }
                     ]
                     await db.updateOne("programs", update);
-                    res.status(200).send(soc_code + " deleted from " + p["_title"] + " program.");
+                    res.status(200).send(soc_code + " deleted from " + p["title"] + " program.");
                 } else{
-                    res.status(404).send(p._title + " program does not contain code " + soc_code + ".");
+                    res.status(404).send(p.title + " program does not contain code " + soc_code + ".");
                 }
             } else {
                 res.status(404).send("No program found for code.");
@@ -556,11 +556,11 @@ Router.get("/:code/title", async(req,res) => {
             throw new Error("Program code must be a number.");
         }
         code = +code;
-        let program = await db.queryCollection("programs", {"_code": code});
+        let program = await db.queryCollection("programs", {"code": code});
         console.log(program);
         if(program.length > 0) {
             res.setHeader("Content-Type", "application/json");
-            res.status(200).send(program[0]["_title"]);
+            res.status(200).send(program[0]["title"]);
         } else {
             throw new Error("No program found. Please try again.")
         }

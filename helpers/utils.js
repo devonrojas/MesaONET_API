@@ -159,25 +159,25 @@ class Utils {
                     let k = field.split('$')[1];
                     switch(k) {
                         case "programcode": 
-                            obj["_code"] = +e[field]["$t"];
+                            obj["code"] = +e[field]["$t"];
                             break;
                         case "programtitle":
-                            obj["_title"] = e[field]["$t"];
+                            obj["title"] = e[field]["$t"];
                             break;
                         case "relevancescore":
-                            obj["_relevance_score"] = +e[field]["$t"];
+                            obj["relevance_score"] = +e[field]["$t"];
                             break;
                         case "soccodeblacklist":
-                            obj["_soc_blacklist"] = e[field]["$t"] == "" ? [] : e[field]["$t"].split(",");
+                            obj["soc_blacklist"] = e[field]["$t"] == "" ? [] : e[field]["$t"].split(",");
                             break;
                         case "soccodeadds":
-                            obj["_soc_adds"] = e[field]["$t"] == "" ? [] : e[field]["$t"].split(",");
+                            obj["soc_adds"] = e[field]["$t"] == "" ? [] : e[field]["$t"].split(",");
                             break;
                         case "onetkeywordsearch":
-                            obj["_keywords"] = e[field]["$t"] == "" ? [] : e[field]["$t"].split(" ");
+                            obj["keywords"] = e[field]["$t"] == "" ? [] : e[field]["$t"].split(" ");
                             break;
                         case "degreetypes":
-                            obj["_degree_types"] = e[field]["$t"] == "" ? [] : e[field]["$t"].split(",")
+                            obj["degree_types"] = e[field]["$t"] == "" ? [] : e[field]["$t"].split(",")
                         default:
                             obj[k] = e[field]["$t"];
                             break;
