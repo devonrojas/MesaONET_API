@@ -32,10 +32,11 @@
  * @author Devon Rojas
  * 
  * @requires {@link https://www.npmjs.com/package/express| express}
+ * @requires {@link https://www.npmjs.com/package/request-promise|request-promsie}
  * 
  * @requires services/DatabaseService
- * @requires services/DataExportService
  * @requires models/AcademicProgram
+ * @requires models/Career
  * @requires helpers/Utils
  */
 
@@ -54,8 +55,62 @@ const Router = express.Router();
 const db = require("../services/DatabaseService.js");
 const AcademicProgram = require("../models/AcademicProgram.js");
 const Career = require("../models/Career.js");
-
 const Utils = require("../helpers/utils.js");
+
+/**
+ * Retrieves multiple [AcademicPrograms]{@link module:models/AcademicProgram} from
+ * database and sends back all of their program data.
+ * 
+ * @name GET/bulk
+ * @function
+ * @memberof module:routes/program~programRouter
+ * 
+ * @see {@link module:services/DatabaseService|DatabaseService}
+ * @see {@link module:helpers/Utils|Utils}
+ * 
+ * @param {Array} codes An array of program codes to fetch information for.
+ * @example
+ * // GET/program/bulk?codes=1&amp;codes=2&amp;...
+ *  
+ */
+Router.get("/bulk", async(req, res) => {
+    try {
+        let codes;
+        // Make sure appropriate query params are sent over
+        if(req.query.codes) {
+            if(Array.isArray(req.query.codes)) {
+                codes = req.query.codes;
+            } else {
+                throw new Error("[codes] query param must be an array.");
+            }
+        } else {
+            throw new Error("No program codes supplied. Please try again.");
+        }
+        let pArr = [];
+        // Loop through each code and retrieve program data
+        await Utils.asyncForEach(codes, async(code) => {
+            if(isNaN(code)) {
+                throw new Error("Program code must be a number.");
+            }
+            code = +code;
+            let program = await db.queryCollection("programs", {"code": code});
+            if(program.length > 0) {
+                let p = Object.assign(new AcademicProgram(""), program[0]);
+                pArr.push(p);
+            } else {
+                throw new Error("No program found. Please try again.")
+            }
+        })
+        res.status(200).send(pArr);
+    } catch(error) {
+        console.error(error.message);
+        if(error.statusCode) {
+            res.status(error.statusCode).send(error.message);
+        } else {
+            res.status(404).send(error.message);
+        }
+    }
+})
 
 /**
  * Adds a new [AcademicProgram]{@link module:models/AcademicProgram} to database.
@@ -192,18 +247,18 @@ Router.post("/", async(req, res) => {
                 console.log("Updating search engine...")
                 const SEARCH_ENGINE_API = "https://polar-wave-14549.herokuapp.com/admin/";
                 let options = {
-                    uri: SEARCH_ENGINE_API + "program/" + p["_code"],
+                    uri: SEARCH_ENGINE_API + "program/" + p["code"],
                     method: "POST",
                     body: {
-                        code: p["_code"],
-                        name: p["_title"]
+                        code: p["code"],
+                        name: p["title"]
                     }
                 }
                 await rp(options);
                 console.log("Program created in search engine.")
                 await Utils.asyncForEach(p["_careers"], async(career) => {
                     try {
-                        options["uri"] = SEARCH_ENGINE_API + "career/" + career["_code"];
+                        options["uri"] = SEARCH_ENGINE_API + "career/" + career["code"];
                         options["body"] = career;
                         await rp(options);
                     } catch(error) {
@@ -255,13 +310,28 @@ Router.post("/", async(req, res) => {
  */
 Router.get("/", async(req, res) => {
     try {
+        Object.keys(req.query).map(key => {
+            if(req.query[key] === 'true') {
+                req.query[key] = true;
+            } else req.query[key] = false;
+        })
+        console.log(req.query);
         // Empty query to return all documents in programs collection
         let programs = await db.queryCollection("programs", {});
+
         programs = programs.map(program => {
-            return {
-                title: program._title,
-                code: program._code
-            }
+            return !req.query.detail ? {
+                title: program.title,
+                code: program.code
+            } : { 
+                title: program.title, 
+                code: program.code, 
+                careers: program.careers, 
+                degree_types: program.degree_types, 
+                aggregate_salary: program.aggregate_salary, 
+                url: program.url, 
+                aggregate_growth: program.aggregate_growth 
+            };
         }).sort((a, b) => {
             const titleA = a.title.toLowerCase();
             const titleB = b.title.toLowerCase();
@@ -301,7 +371,7 @@ Router.get("/:code", async(req, res) => {
             throw new Error("Program code must be a number.");
         }
         code = +code;
-        let program = await db.queryCollection("programs", {"_code": code});
+        let program = await db.queryCollection("programs", {"code": code});
         if(program.length > 0) {
             let p = Object.assign(new AcademicProgram(""), program[0]);
             await p.checkRelatedPrograms();
@@ -341,14 +411,14 @@ Router.put("/:code", async(req, res) => {
         let validObj = data &amp;&amp; Object.keys(data).every(key => KEYS.includes(key));
         if(validObj) {
             try {
-                let p = await db.queryCollection("programs", {"_code": +code });
+                let p = await db.queryCollection("programs", {"code": +code });
                 if(p.length > 0) {
                     p = Object.assign(new AcademicProgram(), p[0]);
                     if(data["degree_types"]) {
-                        p["_degree_types"] = data["degree_types"];
+                        p["degree_types"] = data["degree_types"];
                     }
                     if(data["title"]) {
-                        p["_title"] = data["title"];
+                        p["title"] = data["title"];
                         await p.updateCareers();
                     }
                 } else {
@@ -356,7 +426,7 @@ Router.put("/:code", async(req, res) => {
                 }
     
                 let update = [
-                    { "_code": +code },
+                    { "code": +code },
                     { $set: { ...p }},
                     { upsert: true }
                 ]
@@ -388,10 +458,10 @@ Router.delete("/:code", async(req, res) => {
     let code = req.params.code;
     if(code) {
         try {
-            let p = await db.queryCollection("programs", {"_code": +code});
+            let p = await db.queryCollection("programs", {"code": +code});
             if(p.length > 0) {
-                await db.deleteOne("programs", {"_code": code});
-                res.status(200).send(p[0]["_title"] + " program deleted.");
+                await db.deleteOne("programs", {"code": code});
+                res.status(200).send(p[0]["title"] + " program deleted.");
             } else {
                 res.status(404).send("No program found for code.");
             }
@@ -418,11 +488,11 @@ Router.post("/:code/career/:soc_code", async(req, res) => {
     let soc_code = req.params.soc_code;
 
     try {
-        let p = await db.queryCollection("programs", {"_code": +code});
+        let p = await db.queryCollection("programs", {"code": +code});
         if(p.length > 0) {
             p = Object.assign(new AcademicProgram(), p[0]);
             if(!p.hasCareer(soc_code)) {
-                let c = await db.queryCollection("careers", {"_code": soc_code });
+                let c = await db.queryCollection("careers", {"code": soc_code });
                 if(c.length > 0) {
                     c = Object.assign(new Career(soc_code), c[0]);
                 } else {
@@ -433,20 +503,20 @@ Router.post("/:code/career/:soc_code", async(req, res) => {
                 }
                 let obj = {
                     _code: c._code,
-                    _title: c._title,
+                    title: c.title,
                     _growth: c._growth,
                     _salary: c._salary["NationalWagesList"][0]
                 }
                 await p.addCareer(obj);
                 let update = [
-                    { "_code": +code },
+                    { "code": +code },
                     { $set: { ...p }},
                     { upsert: true }
                 ]
                 await db.updateOne("programs", update);
-                res.status(201).send(soc_code + " successfully added to " + p["_title"] + " program.");
+                res.status(201).send(soc_code + " successfully added to " + p["title"] + " program.");
             } else {
-                res.status(409).send(p._title + " program already contains code " + soc_code + ".");
+                res.status(409).send(p.title + " program already contains code " + soc_code + ".");
             }
         } else {
             res.status(404).send("No program found. Please try again.")
@@ -471,20 +541,20 @@ Router.delete("/:code/career/:soc_code", async(req, res) => {
     let soc_code = req.params.soc_code;
     if(code) {
         try {
-            let p = await db.queryCollection("programs", {"_code": +code});
+            let p = await db.queryCollection("programs", {"code": +code});
             if(p.length > 0) {
                 p = Object.assign(new AcademicProgram(), p[0]);
                 if(p.hasCareer(soc_code)) {
                     await p.removeCareer(soc_code);
                     let update = [
-                        { "_code": +code },
+                        { "code": +code },
                         { $set: { ...p }},
                         { upsert: true }
                     ]
                     await db.updateOne("programs", update);
-                    res.status(200).send(soc_code + " deleted from " + p["_title"] + " program.");
+                    res.status(200).send(soc_code + " deleted from " + p["title"] + " program.");
                 } else{
-                    res.status(404).send(p._title + " program does not contain code " + soc_code + ".");
+                    res.status(404).send(p.title + " program does not contain code " + soc_code + ".");
                 }
             } else {
                 res.status(404).send("No program found for code.");
@@ -514,11 +584,11 @@ Router.get("/:code/title", async(req,res) => {
             throw new Error("Program code must be a number.");
         }
         code = +code;
-        let program = await db.queryCollection("programs", {"_code": code});
+        let program = await db.queryCollection("programs", {"code": code});
         console.log(program);
         if(program.length > 0) {
             res.setHeader("Content-Type", "application/json");
-            res.status(200).send(program[0]["_title"]);
+            res.status(200).send(program[0]["title"]);
         } else {
             throw new Error("No program found. Please try again.")
         }
@@ -543,13 +613,13 @@ module.exports = Router;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CareerEducationAPI.html">CareerEducationAPI</a></li><li><a href="module-helpers_Utils.html">helpers/Utils</a></li><li><a href="module-models_AcademicProgram.html">models/AcademicProgram</a></li><li><a href="module-models_Career.html">models/Career</a></li><li><a href="module-models_JobTracker.html">models/JobTracker</a></li><li><a href="module-models_Salary.html">models/Salary</a></li><li><a href="module-models_Throttler.html">models/Throttler</a></li><li><a href="module-routes_admin.html">routes/admin</a></li><li><a href="module-routes_career.html">routes/career</a></li><li><a href="module-routes_program.html">routes/program</a></li><li><a href="module-services_CareerOneStopService.html">services/CareerOneStopService</a></li><li><a href="module-services_DatabaseService.html">services/DatabaseService</a></li><li><a href="module-services_DataExportService.html">services/DataExportService</a></li><li><a href="module-services_GoogleMapsService.html">services/GoogleMapsService</a></li><li><a href="module-services_ONETService.html">services/ONETService</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-CareerEducationAPI-app.html">app</a></li><li><a href="module-routes_admin-adminRouter.html">adminRouter</a></li><li><a href="module-routes_career-careerRouter.html">careerRouter</a></li><li><a href="module-routes_program-programRouter.html">programRouter</a></li></ul><h3>Classes</h3><ul><li><a href="module-helpers_Utils-Utils.html">Utils</a></li><li><a href="module-models_AcademicProgram-AcademicProgram.html">AcademicProgram</a></li><li><a href="module-models_Career-Career.html">Career</a></li><li><a href="module-models_JobTracker-AreaRadius.html">AreaRadius</a></li><li><a href="module-models_JobTracker-CountyArea.html">CountyArea</a></li><li><a href="module-models_JobTracker-JobRecord.html">JobRecord</a></li><li><a href="module-models_JobTracker-JobTracker.html">JobTracker</a></li><li><a href="module-models_JobTracker-PrimitiveArea.html">PrimitiveArea</a></li><li><a href="module-models_Salary-Salary.html">Salary</a></li><li><a href="module-models_Throttler-Throttler.html">Throttler</a></li><li><a href="module-services_DataExportService-DataExportService.html">DataExportService</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CareerEducationAPI.html">CareerEducationAPI</a></li><li><a href="module-helpers_auth.html">helpers/auth</a></li><li><a href="module-helpers_Utils.html">helpers/Utils</a></li><li><a href="module-models_AcademicProgram.html">models/AcademicProgram</a></li><li><a href="module-models_Career.html">models/Career</a></li><li><a href="module-models_JobTracker.html">models/JobTracker</a></li><li><a href="module-models_Salary.html">models/Salary</a></li><li><a href="module-models_Throttler.html">models/Throttler</a></li><li><a href="module-routes_admin.html">routes/admin</a></li><li><a href="module-routes_career.html">routes/career</a></li><li><a href="module-routes_program.html">routes/program</a></li><li><a href="module-services_CareerOneStopService.html">services/CareerOneStopService</a></li><li><a href="module-services_DatabaseService.html">services/DatabaseService</a></li><li><a href="module-services_DataExportService.html">services/DataExportService</a></li><li><a href="module-services_GoogleMapsService.html">services/GoogleMapsService</a></li><li><a href="module-services_ONETService.html">services/ONETService</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-CareerEducationAPI-app.html">app</a></li><li><a href="module-routes_admin-adminRouter.html">adminRouter</a></li><li><a href="module-routes_career-careerRouter.html">careerRouter</a></li><li><a href="module-routes_program-programRouter.html">programRouter</a></li></ul><h3>Classes</h3><ul><li><a href="module-helpers_Utils-Utils.html">Utils</a></li><li><a href="module-models_AcademicProgram-AcademicProgram.html">AcademicProgram</a></li><li><a href="module-models_Career-Career.html">Career</a></li><li><a href="module-models_JobTracker-AreaRadius.html">AreaRadius</a></li><li><a href="module-models_JobTracker-CountyArea.html">CountyArea</a></li><li><a href="module-models_JobTracker-JobRecord.html">JobRecord</a></li><li><a href="module-models_JobTracker-JobTracker.html">JobTracker</a></li><li><a href="module-models_JobTracker-PrimitiveArea.html">PrimitiveArea</a></li><li><a href="module-models_Salary-Salary.html">Salary</a></li><li><a href="module-models_Throttler-Throttler.html">Throttler</a></li><li><a href="module-services_DataExportService-DataExportService.html">DataExportService</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Sep 26 2019 12:46:23 GMT-0700 (Pacific Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Fri Oct 04 2019 13:47:18 GMT-0700 (Pacific Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

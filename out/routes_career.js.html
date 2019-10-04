@@ -93,6 +93,11 @@ Router.get("/", async(req, res) => {
     }
 })
 
+/**
+ * @name GET/:code
+ * @function
+ * @memberof module:routes/career~careerRouter
+ */
 Router.get("/:code", async(req, res) => {
     Object.keys(req.query).map(key => {
         if(req.query[key] === 'true') {
@@ -101,40 +106,39 @@ Router.get("/:code", async(req, res) => {
     })
     let code = req.params.code;
     try {
-        let career = await db.queryCollection("careers", {"_code": code});
+        let career = await db.queryCollection("careers", {"code": code});
         if(career.length > 0) {
             career = career[0];
             let data = {
                 code: code,
-                title: career["_title"]
+                title: career["title"]
             };
-            console.log(req.query);
             if(req.query.description) {
-                data["description"] = career["_description"];
+                data["description"] = career["description"];
             }
             if(req.query.growth) {
-                data["growth"] = career["_growth"];
+                data["growth"] = career["growth"];
             }
             if(req.query.riasec_code) {
-                data["riasec_code"] = career["_riasec_code"];
+                data["riasec_code"] = career["riasec_code"];
             }
             if(req.query.technical_skills) {
-                data["technical_skills"] = career["_technical_skills"];
+                data["technical_skills"] = career["technical_skills"];
             }
             if(req.query.education) {
-                data["education"] = career["_education"];
+                data["education"] = career["education"];
             }
             if(req.query.tasks) {
-                data["tasks"] = career["_tasks"];
+                data["tasks"] = career["tasks"];
             }
             if(req.query.related_programs) {
-                data["related_programs"] = career["_related_programs"];
+                data["related_programs"] = career["related_programs"];
             }
             if(req.query.video) {
-                data["video"] = career["_video"];
+                data["video"] = career["video"];
             }
             if(req.query.salary) {
-                data["salary"] = career["_salary"];
+                data["salary"] = career["salary"];
             }
             res.status(200).json(data);
         } else {
@@ -175,7 +179,7 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
 
     console.log("Searching for career...");
     try {
-        let career = await db.queryCollection("careers", {"_code": code})
+        let career = await db.queryCollection("careers", {"code": code})
         if (career.length > 0) {
             console.log("Career found!");
             career = Object.assign(new Career(code), career[0]);
@@ -244,7 +248,7 @@ Router.get("/:code/:location/:radius?", async (req, res) => {
                 }
             }
 
-            career["_job_data"] = jobData[0] || jobData;
+            career["job_data"] = jobData[0] || jobData;
             // Pull location-specific salary data
             await career.updateSalary(location);
 
@@ -269,13 +273,13 @@ module.exports = Router;</code></pre>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CareerEducationAPI.html">CareerEducationAPI</a></li><li><a href="module-helpers_Utils.html">helpers/Utils</a></li><li><a href="module-models_AcademicProgram.html">models/AcademicProgram</a></li><li><a href="module-models_Career.html">models/Career</a></li><li><a href="module-models_JobTracker.html">models/JobTracker</a></li><li><a href="module-models_Salary.html">models/Salary</a></li><li><a href="module-models_Throttler.html">models/Throttler</a></li><li><a href="module-routes_admin.html">routes/admin</a></li><li><a href="module-routes_career.html">routes/career</a></li><li><a href="module-routes_program.html">routes/program</a></li><li><a href="module-services_CareerOneStopService.html">services/CareerOneStopService</a></li><li><a href="module-services_DatabaseService.html">services/DatabaseService</a></li><li><a href="module-services_DataExportService.html">services/DataExportService</a></li><li><a href="module-services_GoogleMapsService.html">services/GoogleMapsService</a></li><li><a href="module-services_ONETService.html">services/ONETService</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-CareerEducationAPI-app.html">app</a></li><li><a href="module-routes_admin-adminRouter.html">adminRouter</a></li><li><a href="module-routes_career-careerRouter.html">careerRouter</a></li><li><a href="module-routes_program-programRouter.html">programRouter</a></li></ul><h3>Classes</h3><ul><li><a href="module-helpers_Utils-Utils.html">Utils</a></li><li><a href="module-models_AcademicProgram-AcademicProgram.html">AcademicProgram</a></li><li><a href="module-models_Career-Career.html">Career</a></li><li><a href="module-models_JobTracker-AreaRadius.html">AreaRadius</a></li><li><a href="module-models_JobTracker-CountyArea.html">CountyArea</a></li><li><a href="module-models_JobTracker-JobRecord.html">JobRecord</a></li><li><a href="module-models_JobTracker-JobTracker.html">JobTracker</a></li><li><a href="module-models_JobTracker-PrimitiveArea.html">PrimitiveArea</a></li><li><a href="module-models_Salary-Salary.html">Salary</a></li><li><a href="module-models_Throttler-Throttler.html">Throttler</a></li><li><a href="module-services_DataExportService-DataExportService.html">DataExportService</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CareerEducationAPI.html">CareerEducationAPI</a></li><li><a href="module-helpers_auth.html">helpers/auth</a></li><li><a href="module-helpers_Utils.html">helpers/Utils</a></li><li><a href="module-models_AcademicProgram.html">models/AcademicProgram</a></li><li><a href="module-models_Career.html">models/Career</a></li><li><a href="module-models_JobTracker.html">models/JobTracker</a></li><li><a href="module-models_Salary.html">models/Salary</a></li><li><a href="module-models_Throttler.html">models/Throttler</a></li><li><a href="module-routes_admin.html">routes/admin</a></li><li><a href="module-routes_career.html">routes/career</a></li><li><a href="module-routes_program.html">routes/program</a></li><li><a href="module-services_CareerOneStopService.html">services/CareerOneStopService</a></li><li><a href="module-services_DatabaseService.html">services/DatabaseService</a></li><li><a href="module-services_DataExportService.html">services/DataExportService</a></li><li><a href="module-services_GoogleMapsService.html">services/GoogleMapsService</a></li><li><a href="module-services_ONETService.html">services/ONETService</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-CareerEducationAPI-app.html">app</a></li><li><a href="module-routes_admin-adminRouter.html">adminRouter</a></li><li><a href="module-routes_career-careerRouter.html">careerRouter</a></li><li><a href="module-routes_program-programRouter.html">programRouter</a></li></ul><h3>Classes</h3><ul><li><a href="module-helpers_Utils-Utils.html">Utils</a></li><li><a href="module-models_AcademicProgram-AcademicProgram.html">AcademicProgram</a></li><li><a href="module-models_Career-Career.html">Career</a></li><li><a href="module-models_JobTracker-AreaRadius.html">AreaRadius</a></li><li><a href="module-models_JobTracker-CountyArea.html">CountyArea</a></li><li><a href="module-models_JobTracker-JobRecord.html">JobRecord</a></li><li><a href="module-models_JobTracker-JobTracker.html">JobTracker</a></li><li><a href="module-models_JobTracker-PrimitiveArea.html">PrimitiveArea</a></li><li><a href="module-models_Salary-Salary.html">Salary</a></li><li><a href="module-models_Throttler-Throttler.html">Throttler</a></li><li><a href="module-services_DataExportService-DataExportService.html">DataExportService</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Sep 26 2019 12:46:23 GMT-0700 (Pacific Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Fri Oct 04 2019 13:47:18 GMT-0700 (Pacific Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

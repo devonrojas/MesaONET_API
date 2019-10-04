@@ -56,45 +56,52 @@ class AcademicProgram {
      */
     constructor(title, code, degree_types = [], relevance_score = 50, soc_blacklist = [], soc_adds = [], keyword = "") {
         /** @private */
-        this._title = title;
+        this.title = title;
         /** @private */
-        this._code = code ? code : 0;
+        this.code = code ? code : 0;
         /** @private */
-        this._careers = [];
+        this.careers = [];
         /** @private */
-        this._degree_types = degree_types;
+        this.degree_types = degree_types;
         /** @private */
-        this._aggregate_salary = [];
+        this.aggregate_salary = [];
         /** @private */
-        this._aggregate_growth = 0;
+        this.aggregate_growth = 0;
         /** @private */
-        this._relevance_score = relevance_score;
+        this.relevance_score = relevance_score;
         /** @private */
-        this._soc_blacklist = soc_blacklist;
+        this.soc_blacklist = soc_blacklist;
         /** @private */
-        this._soc_adds = soc_adds.map(code => {
+        this.soc_adds = soc_adds.map(code => {
             return {
                 code: code,
                 title: "N/A"
             }
         });
-        /** @private */
-        this._keyword = keyword;
+        this.keyword = keyword;
+
+
+        // Public props
+        this.url = this.title
+        .toLowerCase()
+        .replace("and ", "")
+        .replace(/[^\w ]/g, "-")
+        .replace(/ /g, "-");
     }
 
     async addCareer(career) {
-        if(!this._careers.map(career => career._code).includes(career._code)) {
-            this._careers.push(career);
+        if(!this.careers.map(career => career.code).includes(career.code)) {
+            this.careers.push(career);
             await this._aggregateData();
         } else {
-            console.log("Career " + career._title + " already exists in program.");
+            console.log("Career " + career.title + " already exists in program.");
         }
     }
 
     async removeCareer(code) {
-        if(this._careers.map(career => career._code).includes(code)) {
-            let idx = this._careers.map(career => career._code).indexOf(code);
-            this._careers.splice(idx, 1);
+        if(this.careers.map(career => career.code).includes(code)) {
+            let idx = this.careers.map(career => career.code).indexOf(code);
+            this.careers.splice(idx, 1);
             await this._aggregateData();
         } else {
             console.log("Career " + code + " already exists in program.");
@@ -102,7 +109,7 @@ class AcademicProgram {
     }
     
     hasCareer(code) {
-        return this._careers.map(career => career._code).includes(code);
+        return this.careers.map(career => career.code).includes(code);
     }
 
     /**
@@ -123,84 +130,84 @@ class AcademicProgram {
         try {
             // Check if program data has already been generated. If it has, just return 
             // it instead of re-generating the program and career data.
-            let existingProgram = await db.queryCollection("programs", { _title: this._title });
+            let existingProgram = await db.queryCollection("programs", { title: this.title });
             if(existingProgram.length === 0) {
-                console.log("\nBuilding program: " + this._title + "\n");
+                console.log("\nBuilding program: " + this.title + "\n");
 
                 // Get length of collection for next code in series
                 let docs = await db.queryCollection("programs", {});
-                this._code = docs.length + 1;
+                this.code = docs.length + 1;
                 // Get all matching occupations for program name
-                const keyword_url = "https://services.onetcenter.org/ws/online/search?keyword=" + this._keyword;
-                let res = await ONETService.fetch(keyword_url, this._relevance_score);
-                if(this._soc_adds.length > 0) {
-                    res = res.concat(this._soc_adds);
+                const keyword_url = "https://services.onetcenter.org/ws/online/search?keyword=" + this.keyword;
+                let res = await ONETService.fetch(keyword_url, this.relevance_score);
+                if(this.soc_adds.length > 0) {
+                    res = res.concat(this.soc_adds);
                 }
                 await Utils.asyncForEach(res, async(career, index) => {
                     console.log("[" + (index + 1) + "/" + res.length + "] " + "Checking " + career.code + " | " + career.title + "...\r");
                     // Check for blacklisted codes
                     let codePrefix = career.code.slice(0, 2);
-                    if(!this._soc_blacklist.includes(codePrefix)) {
+                    if(!this.soc_blacklist.includes(codePrefix)) {
                         // Build Career objects for all valid O*NET Codes
                         let c = new Career(career.code);
-                        c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
+                        c.setRelatedPrograms(await this._buildRelatedProgramData(c.code));
                         await c.retrieveCareerData();
         
-                        if(c.hasOwnProperty("_salary")) {
+                        if(c.hasOwnProperty("salary")) {
                             // Only save career growth and salary info in program data
                             let obj = {
-                                _code: c._code,
-                                _title: c._title,
-                                _growth: c._growth,
-                                _riasec_code: c._riasec_code,
-                                _salary: c._salary["NationalWagesList"][0]
+                                code: c.code,
+                                title: c.title,
+                                growth: c.growth,
+                                riasec_code: c.riasec_code,
+                                salary: c.salary["NationalWagesList"][0]
                             }
-                            this._careers.push(obj)
+                            this.careers.push(obj)
                         }
                     } else {
                         console.log("Skipping " + career.code + ". Blacklisted.");
                     }
                 })
             } else {
-                console.log("\nProgram: " + this._title + " already exists in database.");
+                console.log("\nProgram: " + this.title + " already exists in database.");
                 console.log("Checking if related programs have been updated...\n");
                 Object.assign(this, existingProgram[0]);
 
                 // Run through all careers in program to check for updates
-                await Utils.asyncForEach(this._careers, async(career, index) => {
-                    let c = Object.assign(new Career(career["_code"]), career);
+                await Utils.asyncForEach(this.careers, async(career, index) => {
+                    let c = Object.assign(new Career(career["code"]), career);
 
                     let obj = {
-                        _code: c._code,
-                        _title: c._title,
-                        _growth: c._growth,
-                        _salary: c._salary
+                        code: c.code,
+                        title: c.title,
+                        growth: c.growth,
+                        salary: c.salary
                     }
 
                     // Update career in program object
-                    this._careers[index] = obj;
+                    this.careers[index] = obj;
                 })
 
-                await this.checkRelatedPrograms();
+                // await this.checkRelatedPrograms();
                 
                 console.log();
             }
 
             // Filter any null data before aggregation
-            this._careers = this._careers.filter(career => career._salary !== null &amp;&amp; career._salary !== undefined)
+            this.careers = this.careers.filter(career => career.salary !== null &amp;&amp; career.salary !== undefined)
             // Aggregate salary and growth data from careers
             await this._aggregateData();
 
             // Remove extraneous properties
-            delete this._soc_blacklist;
-            delete this._soc_adds;
-            delete this._keyword;
-            delete this._relevance_score;
+            delete this.soc_blacklist;
+            delete this.soc_adds;
+            delete this.keyword;
+            delete this.relevance_score;
 
             // Update program in database
             let writeOp = (program) => {
                 return [
-                    { _code: program['_code'] },
+                    { code: program['code'] },
                     Object.assign({}, {...program, lastUpdated: Date.now()}),
                     { upsert: true }
                 ]
@@ -214,47 +221,47 @@ class AcademicProgram {
     }
 
     async checkRelatedPrograms() {
-        await Utils.asyncForEach(this._careers, async(career, index) => {
-            console.log("[" + (index + 1) + "/" + this._careers.length + "] " + "Checking " + career._code + " | " + career._title + "...\r");
-            career = (await db.queryCollection("careers", {"_code": career._code}))[0];
+        await Utils.asyncForEach(this.careers, async(career, index) => {
+            console.log("[" + (index + 1) + "/" + this.careers.length + "] " + "Checking " + career.code + " | " + career.title + "...\r");
+            career = (await db.queryCollection("careers", {"code": career.code}))[0];
             let c = Object.assign(new Career(), career);
-            await c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
+            await c.setRelatedPrograms(await this._buildRelatedProgramData(c.code));
             await c.saveToDatabase();
         })
     }
 
     async updateCareers() {
-        this._careers = [];
+        this.careers = [];
         // Get all matching occupations for program name
-        const keyword_url = "https://services.onetcenter.org/ws/online/search?keyword=" + this._title.toLowerCase();
+        const keyword_url = "https://services.onetcenter.org/ws/online/search?keyword=" + this.title.toLowerCase();
         let res = await ONETService.fetch(keyword_url);
         await Utils.asyncForEach(res, async(career, index) => {
             console.log("[" + (index + 1) + "/" + res.length + "] " + "Checking " + career.code + " | " + career.title + "...\r");
             // Build Career objects for all valid O*NET Codes
             let c = new Career(career.code);
-            c.setRelatedPrograms(await this._buildRelatedProgramData(c._code));
+            c.setRelatedPrograms(await this._buildRelatedProgramData(c.code));
             await c.retrieveCareerData();
-            if(c.hasOwnProperty("_salary")) {
+            if(c.hasOwnProperty("salary") &amp;&amp; c.hasOwnProperty("riasec_code")) {
                 // Only save career growth and salary info in program data
                 let obj = {
-                    _code: c._code,
-                    _title: c._title,
-                    _growth: c._growth,
-                    _salary: c._salary["NationalWagesList"][0]
+                    code: c.code,
+                    title: c.title,
+                    growth: c.growth,
+                    salary: c.salary["NationalWagesList"][0]
                 }
-                this._careers.push(obj);
+                this.careers.push(obj);
             }
         })
         
         // Filter any null data before aggregation
-        this._careers = this._careers.filter(career => career._salary !== null &amp;&amp; career._salary !== undefined);
+        this.careers = this.careers.filter(career => career.salary !== null &amp;&amp; career.salary !== undefined);
         // Aggregate salary and growth data from careers
         await this._aggregateData();
     }
 
     /**
      * Aggregates all salary and growth values in careers array and stores
-     * results in _aggregate_salary and _aggregate_growth properties.
+     * results in aggregate_salary and aggregate_growth properties.
      * 
      * @async
      * @private
@@ -264,9 +271,9 @@ class AcademicProgram {
     async _aggregateData() {
         try {
             let temp = [];
-            // Map all careers to just national salary data and push each salary object into _aggregate_salary array.
-            this._careers
-            .map(career => career._salary)
+            // Map all careers to just national salary data and push each salary object into aggregate_salary array.
+            this.careers
+            .map(career => career.salary)
             .forEach(salary => {
                 temp.push(new Salary(...Object.values(salary)));
             })
@@ -279,22 +286,22 @@ class AcademicProgram {
                 obj.Pct90 += item.getPct90()
                 return obj;
             }, {Pct10: 0, Pct25: 0, Median: 0, Pct75: 0, Pct90: 0});
-            // Average the salary data using the length of the _careers array
+            // Average the salary data using the length of the careers array
             Object.keys(o).forEach(key => {
-                o[key] /= this._careers.length;
+                o[key] /= this.careers.length;
             })
-            this._aggregate_salary = o;
+            this.aggregate_salary = o;
     
-            // Map all careers to just growth data and accumulate total in _aggregate_growth property
-            this._careers.map(career => career._growth).forEach(growth => {
+            // Map all careers to just growth data and accumulate total in aggregate_growth property
+            this.careers.map(career => career.growth).forEach(growth => {
                 if(isNaN(growth)) {
-                    this._aggregate_growth += +growth;
+                    this.aggregate_growth += +growth;
                 } else {
-                    this._aggregate_growth += growth;
+                    this.aggregate_growth += growth;
                 }
             })
-            // Average the growth using the length of the _careers array
-            this._aggregate_growth /= this._careers.length;
+            // Average the growth using the length of the careers array
+            this.aggregate_growth /= this.careers.length;
         } catch(error) {
             console.error(error);
         }
@@ -312,27 +319,19 @@ class AcademicProgram {
      * @return {void}
      */
     async _buildRelatedProgramData(code) {
-        // Find all programs that have career code in _careers array.
-        let relatedPrograms = await db.queryCollection("programs", { "_careers._code": code, "_title": { $ne: this._title } });
+        // Find all programs that have career code in careers array.
+        let relatedPrograms = await db.queryCollection("programs", { "careers.code": code, "title": { $ne: this.title } });
         // Include current program in related programs
         relatedPrograms.push(this);
 
         // Map all programs into related program format
         relatedPrograms = relatedPrograms.map(program => {
-            let path =
-            "/" +
-            program._title
-                .toLowerCase()
-                .replace("and ", "")
-                .replace(/['\/]|/g, "")
-                .replace(/ /g, "-") +
-            ".shtml";
 
             return {
-                title: program._title,
-                code: program._code,
-                degree_types: program._degree_types,
-                path: path
+                title: program.title,
+                code: program.code,
+                degree_types: program.degree_types,
+                url: program.url
             }
         })
         // Return alphabetically sorted list
@@ -352,13 +351,13 @@ module.exports = AcademicProgram;</code></pre>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CareerEducationAPI.html">CareerEducationAPI</a></li><li><a href="module-helpers_Utils.html">helpers/Utils</a></li><li><a href="module-models_AcademicProgram.html">models/AcademicProgram</a></li><li><a href="module-models_Career.html">models/Career</a></li><li><a href="module-models_JobTracker.html">models/JobTracker</a></li><li><a href="module-models_Salary.html">models/Salary</a></li><li><a href="module-models_Throttler.html">models/Throttler</a></li><li><a href="module-routes_admin.html">routes/admin</a></li><li><a href="module-routes_career.html">routes/career</a></li><li><a href="module-routes_program.html">routes/program</a></li><li><a href="module-services_CareerOneStopService.html">services/CareerOneStopService</a></li><li><a href="module-services_DatabaseService.html">services/DatabaseService</a></li><li><a href="module-services_DataExportService.html">services/DataExportService</a></li><li><a href="module-services_GoogleMapsService.html">services/GoogleMapsService</a></li><li><a href="module-services_ONETService.html">services/ONETService</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-CareerEducationAPI-app.html">app</a></li><li><a href="module-routes_admin-adminRouter.html">adminRouter</a></li><li><a href="module-routes_career-careerRouter.html">careerRouter</a></li><li><a href="module-routes_program-programRouter.html">programRouter</a></li></ul><h3>Classes</h3><ul><li><a href="module-helpers_Utils-Utils.html">Utils</a></li><li><a href="module-models_AcademicProgram-AcademicProgram.html">AcademicProgram</a></li><li><a href="module-models_Career-Career.html">Career</a></li><li><a href="module-models_JobTracker-AreaRadius.html">AreaRadius</a></li><li><a href="module-models_JobTracker-CountyArea.html">CountyArea</a></li><li><a href="module-models_JobTracker-JobRecord.html">JobRecord</a></li><li><a href="module-models_JobTracker-JobTracker.html">JobTracker</a></li><li><a href="module-models_JobTracker-PrimitiveArea.html">PrimitiveArea</a></li><li><a href="module-models_Salary-Salary.html">Salary</a></li><li><a href="module-models_Throttler-Throttler.html">Throttler</a></li><li><a href="module-services_DataExportService-DataExportService.html">DataExportService</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-CareerEducationAPI.html">CareerEducationAPI</a></li><li><a href="module-helpers_auth.html">helpers/auth</a></li><li><a href="module-helpers_Utils.html">helpers/Utils</a></li><li><a href="module-models_AcademicProgram.html">models/AcademicProgram</a></li><li><a href="module-models_Career.html">models/Career</a></li><li><a href="module-models_JobTracker.html">models/JobTracker</a></li><li><a href="module-models_Salary.html">models/Salary</a></li><li><a href="module-models_Throttler.html">models/Throttler</a></li><li><a href="module-routes_admin.html">routes/admin</a></li><li><a href="module-routes_career.html">routes/career</a></li><li><a href="module-routes_program.html">routes/program</a></li><li><a href="module-services_CareerOneStopService.html">services/CareerOneStopService</a></li><li><a href="module-services_DatabaseService.html">services/DatabaseService</a></li><li><a href="module-services_DataExportService.html">services/DataExportService</a></li><li><a href="module-services_GoogleMapsService.html">services/GoogleMapsService</a></li><li><a href="module-services_ONETService.html">services/ONETService</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-CareerEducationAPI-app.html">app</a></li><li><a href="module-routes_admin-adminRouter.html">adminRouter</a></li><li><a href="module-routes_career-careerRouter.html">careerRouter</a></li><li><a href="module-routes_program-programRouter.html">programRouter</a></li></ul><h3>Classes</h3><ul><li><a href="module-helpers_Utils-Utils.html">Utils</a></li><li><a href="module-models_AcademicProgram-AcademicProgram.html">AcademicProgram</a></li><li><a href="module-models_Career-Career.html">Career</a></li><li><a href="module-models_JobTracker-AreaRadius.html">AreaRadius</a></li><li><a href="module-models_JobTracker-CountyArea.html">CountyArea</a></li><li><a href="module-models_JobTracker-JobRecord.html">JobRecord</a></li><li><a href="module-models_JobTracker-JobTracker.html">JobTracker</a></li><li><a href="module-models_JobTracker-PrimitiveArea.html">PrimitiveArea</a></li><li><a href="module-models_Salary-Salary.html">Salary</a></li><li><a href="module-models_Throttler-Throttler.html">Throttler</a></li><li><a href="module-services_DataExportService-DataExportService.html">DataExportService</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Thu Sep 26 2019 12:46:23 GMT-0700 (Pacific Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Fri Oct 04 2019 13:47:18 GMT-0700 (Pacific Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>
