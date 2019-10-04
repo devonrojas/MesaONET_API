@@ -61,6 +61,11 @@ class AcademicProgram {
         .replace(/ /g, "-");
     }
 
+    /**
+     * Adds a career into the AcademicProgram's career array.
+     * 
+     * @param {Career} career A Career object.
+     */
     async addCareer(career) {
         if(!this.careers.map(career => career.code).includes(career.code)) {
             this.careers.push(career);
@@ -70,6 +75,11 @@ class AcademicProgram {
         }
     }
 
+    /**
+     * Removes a career from the AcademicProgram's career array.
+     * 
+     * @param {string} code A valid career code.
+     */
     async removeCareer(code) {
         if(this.careers.map(career => career.code).includes(code)) {
             let idx = this.careers.map(career => career.code).indexOf(code);
@@ -80,6 +90,10 @@ class AcademicProgram {
         }
     }
     
+    /**
+     * Checks if a career exists in the AcademicProgram's career array.
+     * @param {string} code A valid career code.
+     */
     hasCareer(code) {
         return this.careers.map(career => career.code).includes(code);
     }
@@ -192,6 +206,11 @@ class AcademicProgram {
         }
     }
 
+    /**
+     * Checks database for any updates to the program collection, and
+     * makes any changes the the AcademicProgram's career's
+     * related_programs property if any updates exist.
+     */
     async checkRelatedPrograms() {
         await Utils.asyncForEach(this.careers, async(career, index) => {
             console.log("[" + (index + 1) + "/" + this.careers.length + "] " + "Checking " + career.code + " | " + career.title + "...\r");
@@ -202,6 +221,9 @@ class AcademicProgram {
         })
     }
 
+    /**
+     * Updates all AcademicProgram's careers with new data from ONET.
+     */
     async updateCareers() {
         this.careers = [];
         // Get all matching occupations for program name

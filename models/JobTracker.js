@@ -218,6 +218,11 @@ class PrimitiveArea {
         return this.top10Companies;
     }
 
+    /**
+     * Sets the area.
+     * 
+     * @param {Area} area The area to set the object to.
+     */
     setArea(area) {
         this.area = area;
     }

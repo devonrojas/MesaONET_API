@@ -1,4 +1,5 @@
-/node_modules
-/logs
+node_modules/
+logs/
+docs/
 .env
-/config
+config/

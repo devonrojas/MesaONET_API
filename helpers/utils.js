@@ -145,6 +145,12 @@ class Utils {
         return p;
     }
 
+    /**
+     * Pulls JSON data of a Google Spreadsheet and parses it into a object.
+     * 
+     * @param {string} spreadsheetID A Google Spreadsheet ID
+     * @return {Object} The parsed JSON object
+     */
     static async fetchGoogleSheet(spreadsheetID) {
         const spreadsheetURL = "https://spreadsheets.google.com/feeds/list/" + spreadsheetID + '/1/public/full?alt=json';
         let res = await rp(spreadsheetURL, {

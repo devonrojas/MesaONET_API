@@ -66,9 +66,16 @@ Router.get("/", async(req, res) => {
 })
 
 /**
+ * Retrieves career data based on query flags passed into request.
+ * Response will always provide career code and title.
+ * 
  * @name GET/:code
  * @function
  * @memberof module:routes/career~careerRouter
+ * 
+ * @example
+ * // Returns the career's description and riasec code.
+ * // /career/15-1134?description=true&riasec_code=true
  */
 Router.get("/:code", async(req, res) => {
     Object.keys(req.query).map(key => {
